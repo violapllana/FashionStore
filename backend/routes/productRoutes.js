@@ -14,7 +14,7 @@ const auth = require("../middleware/authMiddleware");
  * @swagger
  * /api/products:
  *   get:
- *     summary: Merr listën e produkteve
+ *     summary: 
  *     tags: [Products]
  *     responses:
  *       200:
@@ -26,18 +26,20 @@ router.get("/", ctrl.list);
  * @swagger
  * /api/products/{id}:
  *   get:
- *     summary: Merr një produkt sipas ID
+ *     summary: 
  *     tags: [Products]
  *     parameters:
  *       - in: path
  *         name: id
  *         schema:
- *           type: string
+ *           type: integer
  *         required: true
  *         description: ID e produktit
  *     responses:
  *       200:
  *         description: Produkti i marrë
+ *       404:
+ *         description: Produkti nuk u gjet
  */
 router.get("/:id", ctrl.getOne);
 
@@ -45,10 +47,59 @@ router.get("/:id", ctrl.getOne);
  * @swagger
  * /api/products:
  *   post:
- *     summary: Krijo një produkt të ri (admin)
+ *     summary: 
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - price
+ *             properties:
+ *               name:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               description:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               sizes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               colors:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *     responses:
+ *       201:
+ *         description: Produkti u krijua me sukses
+ *       400:
+ *         description: Të dhëna të pavlefshme
+ */
+router.post("/", auth, ctrl.create);
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   put:
+ *     summary: 
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID e produktit për t'u përditësuar
  *     requestBody:
  *       required: true
  *       content:
@@ -62,13 +113,45 @@ router.get("/:id", ctrl.getOne);
  *                 type: number
  *               description:
  *                 type: string
+ *               category:
+ *                 type: string
+ *               sizes:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               colors:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *     responses:
- *       201:
- *         description: Produkti u krijua
+ *       200:
+ *         description: Produkti u përditësua me sukses
+ *       404:
+ *         description: Produkti nuk u gjet
  */
-router.post("/", auth, ctrl.create);
-
 router.put("/:id", auth, ctrl.update);
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   delete:
+ *     summary: 
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: integer
+ *         required: true
+ *         description: ID e produktit për t'u fshirë
+ *     responses:
+ *       200:
+ *         description: Produkti u fshi me sukses
+ *       404:
+ *         description: Produkti nuk u gjet
+ */
 router.delete("/:id", auth, ctrl.remove);
 
 module.exports = router;

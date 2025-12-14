@@ -14,7 +14,7 @@ const productRoutes = require("./routes/productRoutes");
 const favoriteRoutes = require("./routes/favoriteRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const chatRoutes = require("./routes/chatRoutes");
-const userRoutes = require("./routes/userRoutes");
+
 
 // Create Express app
 const app = express();
@@ -30,7 +30,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/chat", chatRoutes);
-app.use("/api/users", userRoutes);
+
 
 // Socket.IO
 const server = http.createServer(app);
