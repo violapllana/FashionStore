@@ -63,22 +63,30 @@ exports.getOne = async (req, res) => {
     return res.status(500).json({ message: err.message });
   }
 };
-
 exports.list = async (req, res) => {
   try {
-    const { q, category, minPrice, maxPrice, size, color, page = 1, limit = 20 } = req.query;
+    const { q, category, subcategory, minPrice, maxPrice, size, color, page = 1, limit = 20 } = req.query;
     const where = {};
+
     if (q) where.name = { [Op.like]: `%${q}%` };
     if (category) where.category = category;
+    if (subcategory) where.subcategory = subcategory;
+
     if (minPrice || maxPrice) where.price = {};
     if (minPrice) where.price[Op.gte] = Number(minPrice);
     if (maxPrice) where.price[Op.lte] = Number(maxPrice);
-    // sizes & colors are JSON arrays stored; query with LIKE (simple)
+
     if (size) where.sizes = { [Op.like]: `%${size}%` };
     if (color) where.colors = { [Op.like]: `%${color}%` };
 
     const offset = (page - 1) * limit;
-    const items = await Product.findAndCountAll({ where, limit: Number(limit), offset: Number(offset), order: [["createdAt","DESC"]] });
+    const items = await Product.findAndCountAll({
+      where,
+      limit: Number(limit),
+      offset: Number(offset),
+      order: [["createdAt","DESC"]]
+    });
+
     return res.json({ total: items.count, products: items.rows });
   } catch (err) {
     return res.status(500).json({ message: err.message });

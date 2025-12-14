@@ -4,12 +4,15 @@ const Product = require("./Product");
 const Favorite = require("./Favorite");
 const CartItem = require("./CartItem");
 const Message = require("./Message");
+const { Order, OrderItem } = require("./Order");
 
-// Ensure associations (some already set above)
+// Associations
 User.hasMany(Favorite);
 Product.hasMany(Favorite);
+
 User.hasMany(CartItem);
 Product.hasMany(CartItem);
+
 User.hasMany(Message);
 
 module.exports = {
@@ -18,5 +21,7 @@ module.exports = {
   Product,
   Favorite,
   CartItem,
-  Message
+  Message,
+  Order,
+  OrderItem,
 };

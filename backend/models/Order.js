@@ -1,0 +1,29 @@
+const { DataTypes } = require("sequelize");
+const sequelize = require("../config/db");
+const User = require("./User");
+const Product = require("./Product");
+
+const Order = sequelize.define("Order", {
+  id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+  totalPrice: { type: DataTypes.FLOAT, allowNull: false },
+  status: { 
+    type: DataTypes.ENUM("pending", "completed", "canceled"), 
+    defaultValue: "pending" 
+  },
+}, { timestamps: true });
+
+// Relacionet
+Order.belongsTo(User, { onDelete: "CASCADE" });
+
+// Një Order mund të ketë shumë produkte përmes OrderItem
+const OrderItem = sequelize.define("OrderItem", {
+  quantity: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 1 },
+  price: { type: DataTypes.FLOAT, allowNull: false }
+}, { timestamps: false });
+
+Order.hasMany(OrderItem, { as: "items", onDelete: "CASCADE" });
+OrderItem.belongsTo(Order);
+OrderItem.belongsTo(Product);
+
+
+module.exports = { Order, OrderItem };
