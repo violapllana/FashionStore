@@ -1,10 +1,17 @@
 const { Product } = require("../models");
 const { Op } = require("sequelize");
-
 exports.create = async (req, res) => {
   try {
-    // ideally admin only
     const body = req.body;
+
+    // Siguro array
+    if (body.sizes && typeof body.sizes === "string") {
+      body.sizes = body.sizes.split(',').map(s => s.trim()).filter(s => s);
+    }
+    if (body.colors && typeof body.colors === "string") {
+      body.colors = body.colors.split(',').map(c => c.trim()).filter(c => c);
+    }
+
     const product = await Product.create(body);
     return res.json(product);
   } catch (err) {
@@ -17,12 +24,23 @@ exports.update = async (req, res) => {
     const { id } = req.params;
     const product = await Product.findByPk(id);
     if (!product) return res.status(404).json({ message: "Not found" });
-    await product.update(req.body);
+
+    const body = req.body;
+
+    if (body.sizes && typeof body.sizes === "string") {
+      body.sizes = body.sizes.split(',').map(s => s.trim()).filter(s => s);
+    }
+    if (body.colors && typeof body.colors === "string") {
+      body.colors = body.colors.split(',').map(c => c.trim()).filter(c => c);
+    }
+
+    await product.update(body);
     return res.json(product);
   } catch (err) {
     return res.status(500).json({ message: err.message });
   }
 };
+
 
 exports.remove = async (req, res) => {
   try {

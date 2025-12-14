@@ -185,7 +185,7 @@ router.post("/reset-password", ctrl.resetPassword);
  *       200:
  *         description: Lista e përdoruesve
  */
-router.get("/users", ctrl.getUsers);
+router.get("/users",ctrl.auth, ctrl.isAdmin, ctrl.getUsers);
 
 /**
  * @swagger
@@ -218,7 +218,7 @@ router.get("/users", ctrl.getUsers);
  *       200:
  *         description: Përdoruesi u përditësua
  */
-router.put("/users/:id", ctrl.updateUser);
+router.put("/users/:id", ctrl.auth, ctrl.isAdmin,ctrl.updateUser);
 
 /**
  * @swagger
@@ -238,6 +238,6 @@ router.put("/users/:id", ctrl.updateUser);
  *       200:
  *         description: Përdoruesi u fshi
  */
-router.delete("/users/:id", ctrl.deleteUser);
+router.delete("/users/:id",ctrl.auth, ctrl.isAdmin, ctrl.deleteUser);
 
 module.exports = router;
