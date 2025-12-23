@@ -8,6 +8,7 @@ const {
 } = require("../utils/jwt");
 const { sendMail } = require("../utils/mailer");
 
+
 exports.auth = async (req, res, next) => {
   try {
     const header = req.headers.authorization;
@@ -25,7 +26,41 @@ exports.auth = async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized", error: err.message });
   }
 };
+exports.getProfile = async (req, res) => {
+  try {
+    const user = req.user;
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 
+// UPDATE MY PROFILE
+exports.updateProfile = async (req, res) => {
+  try {
+    const user = req.user;
+    const { name, email, password } = req.body;
+
+    if (name) user.name = name;
+    if (email) user.email = email;
+    if (password) user.password = await bcrypt.hash(password, 10);
+
+    await user.save();
+    res.json({ message: "Profile updated", user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role
+    }});
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
 exports.isAdmin = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admin access only" });

@@ -23,6 +23,8 @@ export default function AdminDashboard() {
     { label: 'Users', route: '/admin/users', icon: <MaterialIcons name="people" size={28} color="#fff" /> },
     { label: 'Products', route: '/admin/products', icon: <FontAwesome5 name="box" size={28} color="#fff" /> },
     { label: 'Orders', route: '/admin/orderlist', icon: <MaterialIcons name="shopping-cart" size={28} color="#fff" /> },
+    { label: 'Profile', route: '/user/Profile', icon: <MaterialIcons name="person" size={28} color="#fff" /> },
+
     
   ];
 

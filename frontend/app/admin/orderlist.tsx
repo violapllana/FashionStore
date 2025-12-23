@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, ActivityIndicator, Alert, Pressable } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, Pressable, Modal } from 'react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -7,12 +7,7 @@ interface OrderItem {
   id: number;
   quantity: number;
   price: number;
-  Product: {
-    id: number;
-    name: string;
-    price: number;
-    imageUrl?: string;
-  };
+  Product: { id: number; name: string; price: number };
 }
 
 interface Order {
@@ -27,6 +22,9 @@ export default function OrdersList() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const [statusModalVisible, setStatusModalVisible] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -37,7 +35,6 @@ export default function OrdersList() {
       const token = await AsyncStorage.getItem('token');
       if (!token) {
         Alert.alert('Error', 'Please login first');
-        setLoading(false);
         return;
       }
 
@@ -45,9 +42,7 @@ export default function OrdersList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      const fetchedOrders = Array.isArray(res.data) ? res.data : [res.data];
-      setOrders(fetchedOrders);
-
+      setOrders(Array.isArray(res.data) ? res.data : [res.data]);
     } catch (err) {
       console.log(err);
       Alert.alert('Error', 'Could not fetch orders');
@@ -65,25 +60,26 @@ export default function OrdersList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Alert.alert('Success', 'Order deleted');
       setOrders(prev => prev.filter(order => order.id !== id));
+      Alert.alert('Success', 'Order deleted');
     } catch (err) {
       console.log(err);
       Alert.alert('Error', 'Could not delete order');
     }
   };
 
-  const updateStatus = async (id: number, status: string) => {
+  const updateStatus = async (status: string) => {
+    if (!selectedOrder) return;
     try {
       const token = await AsyncStorage.getItem('token');
       if (!token) return;
 
-      await axios.put(`http://localhost:5000/api/orders/${id}`, { status }, {
+      await axios.put(`http://localhost:5000/api/orders/${selectedOrder.id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      Alert.alert('Success', 'Status updated');
-      setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
+      setOrders(prev => prev.map(order => order.id === selectedOrder.id ? { ...order, status } : order));
+      setStatusModalVisible(false);
     } catch (err) {
       console.log(err);
       Alert.alert('Error', 'Could not update status');
@@ -92,73 +88,87 @@ export default function OrdersList() {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>My Orders</Text>
+      <Text style={styles.title}>Manage Orders</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#00d1b2" style={{ marginTop: 50 }} />
-      ) : orders.length === 0 ? (
-        <Text style={styles.noOrders}>No orders found</Text>
-      ) : (
-        <ScrollView>
-          {orders.map(order => (
-            <View key={order.id} style={styles.orderCard}>
-              <Text style={styles.orderHeader}>Order #{order.id}</Text>
-              {order.User?.email && <Text style={styles.orderStatus}>User: {order.User.email}</Text>}
-              <Text style={styles.orderStatus}>Status: {order.status || 'pending'}</Text>
-              <Text style={styles.orderTotal}>Total: ${order.totalPrice?.toFixed(2) || 0}</Text>
+      <View style={styles.table}>
+        <View style={[styles.row, styles.headerRow]}>
+          <Text style={[styles.cell, styles.headerText]}>ID</Text>
+          <Text style={[styles.cell, styles.headerText]}>User</Text>
+          <Text style={[styles.cell, styles.headerText]}>Total</Text>
+          <Text style={[styles.cell, styles.headerText]}>Status</Text>
+          <Text style={[styles.cell, styles.headerText, styles.actionsCol]}>Actions</Text>
+        </View>
 
-              {order.items && order.items.length > 0 ? (
-                order.items.map(item => (
-                  <View key={item.id} style={styles.itemRow}>
-                    <Text style={styles.itemName}>{item.Product?.name || 'Unknown'}</Text>
-                    <Text style={styles.itemQty}>Qty: {item.quantity}</Text>
-                    <Text style={styles.itemPrice}>Price: ${item.price}</Text>
-                  </View>
-                ))
-              ) : (
-                <Text style={{ color: '#fff' }}>No items</Text>
-              )}
-
-              <View style={styles.actions}>
-                <Pressable
-                  style={styles.buttonDelete}
-                  onPress={() => deleteOrder(order.id)}
-                >
-                  <Text style={styles.buttonText}>Delete</Text>
-                </Pressable>
-
-                <Pressable
-                  style={styles.buttonEdit}
-                  onPress={() => {
-                    const newStatus = order.status === "pending" ? "completed" : "pending";
-                    updateStatus(order.id, newStatus);
-                  }}
-                >
-                  <Text style={styles.buttonText}>Toggle Status</Text>
-                </Pressable>
+        <ScrollView style={{ maxHeight: 500 }}>
+          {loading ? (
+            <Text style={{ padding: 20, color:'#fff' }}>Loading...</Text>
+          ) : orders.length === 0 ? (
+            <Text style={{ padding: 20, color:'#fff' }}>No orders found</Text>
+          ) : (
+            orders.map(order => (
+              <View key={order.id} style={styles.row}>
+                <Text style={styles.cell}>{order.id}</Text>
+                <Text style={styles.cell}>{order.User?.email || '-'}</Text>
+                <Text style={styles.cell}>${order.totalPrice?.toFixed(2)}</Text>
+                <Text style={styles.cell}>{order.status}</Text>
+                <View style={[styles.cell, styles.actionsCol]}>
+                  <Pressable
+                    style={styles.editBtn}
+                    onPress={() => { setSelectedOrder(order); setStatusModalVisible(true); }}
+                  >
+                    <Text style={styles.btnText}>Edit</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.deleteBtn}
+                    onPress={() => deleteOrder(order.id)}
+                  >
+                    <Text style={styles.btnText}>Delete</Text>
+                  </Pressable>
+                </View>
               </View>
-            </View>
-          ))}
+            ))
+          )}
         </ScrollView>
-      )}
+      </View>
+
+      {/* Status Modal */}
+      <Modal visible={statusModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Update Status</Text>
+            {['pending', 'completed', 'canceled'].map(status => (
+              <Pressable
+                key={status}
+                style={[styles.btn, { marginBottom: 10 }]}
+                onPress={() => updateStatus(status)}
+              >
+                <Text style={styles.btnText}>{status}</Text>
+              </Pressable>
+            ))}
+            <Pressable style={[styles.btn, { backgroundColor:'#6c757d' }]} onPress={() => setStatusModalVisible(false)}>
+              <Text style={styles.btnText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#121212' },
-  title: { fontSize: 32, fontWeight: '700', color: '#00d1b2', marginBottom: 20 },
-  noOrders: { color: '#fff', marginTop: 50, textAlign: 'center', fontSize: 18 },
-  orderCard: { backgroundColor: '#1e1e1e', borderRadius: 12, padding: 15, marginBottom: 20 },
-  orderHeader: { fontSize: 20, fontWeight: '700', color: '#00d1b2', marginBottom: 5 },
-  orderStatus: { fontSize: 16, color: '#fff', marginBottom: 5 },
-  orderTotal: { fontSize: 16, color: '#fff', marginBottom: 10 },
-  itemRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5 },
-  itemName: { color: '#fff', flex: 2 },
-  itemQty: { color: '#fff', flex: 1, textAlign: 'center' },
-  itemPrice: { color: '#fff', flex: 1, textAlign: 'right' },
-  actions: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 10 },
-  buttonDelete: { backgroundColor: '#ff4d4d', padding: 8, borderRadius: 8, flex: 1, marginRight: 5 },
-  buttonEdit: { backgroundColor: '#00d1b2', padding: 8, borderRadius: 8, flex: 1, marginLeft: 5 },
-  buttonText: { color: '#fff', fontWeight: '700', textAlign: 'center' },
+  container: { flex:1, padding:20, backgroundColor:'#121212' },
+  title: { fontSize:32, fontWeight:'700', color:'#00d1b2', marginBottom:20 },
+  table: { backgroundColor:'#1e1e1e', borderRadius:12, overflow:'hidden', elevation:2 },
+  row: { flexDirection:'row', alignItems:'center', paddingVertical:16, paddingHorizontal:12, borderBottomWidth:1, borderBottomColor:'#333' },
+  headerRow: { backgroundColor:'#272727' },
+  cell: { flex:1, fontSize:15, color:'#fff' },
+  headerText: { color:'#00d1b2', fontWeight:'700', fontSize:16 },
+  actionsCol: { flexDirection:'row', justifyContent:'flex-end', gap:10 },
+  editBtn: { backgroundColor:'#0066ff', paddingVertical:8, paddingHorizontal:18, borderRadius:8 },
+  deleteBtn: { backgroundColor:'#ff3860', paddingVertical:8, paddingHorizontal:18, borderRadius:8 },
+  btnText: { color:'#fff', fontWeight:'700', textAlign:'center' },
+  modalOverlay: { flex:1, backgroundColor:'rgba(0,0,0,0.8)', justifyContent:'center', padding:20 },
+  modalContent: { backgroundColor:'#1e1e1e', borderRadius:12, padding:20 },
+  modalTitle: { fontSize:24, fontWeight:'700', marginBottom:20, color:'#00d1b2' },
+  btn: { backgroundColor:'#00d1b2', paddingVertical:14, borderRadius:10, alignItems:'center' },
 });
