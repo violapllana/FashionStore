@@ -22,8 +22,8 @@ export default function AdminDashboard() {
   const menuItems = [
     { label: 'Users', route: '/admin/users', icon: <MaterialIcons name="people" size={28} color="#fff" /> },
     { label: 'Products', route: '/admin/products', icon: <FontAwesome5 name="box" size={28} color="#fff" /> },
-    { label: 'Cart', route: '/admin/cart', icon: <MaterialIcons name="shopping-cart" size={28} color="#fff" /> },
-    { label: 'Favorites', route: '/admin/favorites', icon: <MaterialIcons name="favorite" size={28} color="#fff" /> },
+    { label: 'Orders', route: '/admin/orderlist', icon: <MaterialIcons name="shopping-cart" size={28} color="#fff" /> },
+    
   ];
 
   const handleNavigate = (route: string) => {

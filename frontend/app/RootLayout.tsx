@@ -23,7 +23,7 @@ function Header() {
         <Pressable onPress={() => router.push('/about')}>
           <Text style={styles.menuItem}>About Us</Text>
         </Pressable>
-        <Pressable onPress={() => router.push('/products')}>
+        <Pressable onPress={() => router.push('/admin/products')}>
           <Text style={styles.menuItem}>Products</Text>
         </Pressable>
         <Pressable onPress={() => router.push('/contact')}>
