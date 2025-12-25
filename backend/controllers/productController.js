@@ -1,94 +1,74 @@
-const { Product } = require("../models");
-const { Op } = require("sequelize");
-exports.create = async (req, res) => {
+const Product = require('../models/Product');
+const fs = require('fs');
+const path = require('path');
+
+const createProduct = async (req, res) => {
   try {
-    const body = req.body;
+    const { name, description, price, category, sizes, colors } = req.body;
+    const image = req.file ? req.file.filename : null;
 
-    // Siguro array
-    if (body.sizes && typeof body.sizes === "string") {
-      body.sizes = body.sizes.split(',').map(s => s.trim()).filter(s => s);
-    }
-    if (body.colors && typeof body.colors === "string") {
-      body.colors = body.colors.split(',').map(c => c.trim()).filter(c => c);
-    }
-
-    const product = await Product.create(body);
-    return res.json(product);
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
-
-exports.update = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const product = await Product.findByPk(id);
-    if (!product) return res.status(404).json({ message: "Not found" });
-
-    const body = req.body;
-
-    if (body.sizes && typeof body.sizes === "string") {
-      body.sizes = body.sizes.split(',').map(s => s.trim()).filter(s => s);
-    }
-    if (body.colors && typeof body.colors === "string") {
-      body.colors = body.colors.split(',').map(c => c.trim()).filter(c => c);
-    }
-
-    await product.update(body);
-    return res.json(product);
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
-
-
-exports.remove = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const product = await Product.findByPk(id);
-    if (!product) return res.status(404).json({ message: "Not found" });
-    await product.destroy();
-    return res.json({ message: "Deleted" });
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
-
-exports.getOne = async (req, res) => {
-  try {
-    const product = await Product.findByPk(req.params.id);
-    if (!product) return res.status(404).json({ message: "Not found" });
-    return res.json(product);
-  } catch (err) {
-    return res.status(500).json({ message: err.message });
-  }
-};
-exports.list = async (req, res) => {
-  try {
-    const { q, category, subcategory, minPrice, maxPrice, size, color, page = 1, limit = 20 } = req.query;
-    const where = {};
-
-    if (q) where.name = { [Op.like]: `%${q}%` };
-    if (category) where.category = category;
-    if (subcategory) where.subcategory = subcategory;
-
-    if (minPrice || maxPrice) where.price = {};
-    if (minPrice) where.price[Op.gte] = Number(minPrice);
-    if (maxPrice) where.price[Op.lte] = Number(maxPrice);
-
-    if (size) where.sizes = { [Op.like]: `%${size}%` };
-    if (color) where.colors = { [Op.like]: `%${color}%` };
-
-    const offset = (page - 1) * limit;
-    const items = await Product.findAndCountAll({
-      where,
-      limit: Number(limit),
-      offset: Number(offset),
-      order: [["createdAt","DESC"]]
+    const product = await Product.create({
+      name,
+      description,
+      price,
+      category,
+      sizes: sizes ? JSON.parse(sizes) : [],
+      colors: colors ? JSON.parse(colors) : [],
+      image,
     });
 
-    return res.json({ total: items.count, products: items.rows });
+    res.status(201).json(product);
   } catch (err) {
-    return res.status(500).json({ message: err.message });
+    res.status(400).json({ message: err.message });
   }
 };
+
+const getProducts = async (req, res) => {
+  try {
+    const products = await Product.findAll();
+    res.json(products);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+const updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    const { name, description, price, category, sizes, colors } = req.body;
+    let image = product.image;
+    if (req.file) {
+      image = req.file.filename;
+    }
+
+    await product.update({
+      name,
+      description,
+      price,
+      category,
+      sizes: sizes ? JSON.parse(sizes) : [],
+      colors: colors ? JSON.parse(colors) : [],
+      image,
+    });
+
+    res.json(product);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+const deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findByPk(req.params.id);
+    if (!product) return res.status(404).json({ message: 'Product not found' });
+
+    await product.destroy();
+    res.json({ message: 'Deleted' });
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+};
+
+module.exports = { createProduct, getProducts, updateProduct, deleteProduct };

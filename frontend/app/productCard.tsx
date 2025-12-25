@@ -1,50 +1,165 @@
-import React from 'react';
-import { View, Text, Pressable, ImageBackground, StyleSheet } from 'react-native';
+import { View, Text, Image, Pressable, StyleSheet, Dimensions } from "react-native";
+import React from "react";
+import { AntDesign } from "@expo/vector-icons";
+
+const { width } = Dimensions.get("window");
+const cardWidth = width / 2.2;
 
 interface Product {
   id: number;
   name: string;
   description: string;
-  image: string;
   price: number;
-  quantity?: number;
+  image?: string;
 }
 
-interface Props {
+interface ProductCardProps {
   product: Product;
-  addToCart: (p: Product) => void;
-  addToFavorites: (p: Product) => void;
+  addToCart: (product: Product) => void;
+  addToFavorites: (product: Product) => void;
 }
 
-export default function ProductCard({ product, addToCart, addToFavorites }: Props) {
+export default function ProductCard({
+  product,
+  addToCart,
+  addToFavorites,
+}: ProductCardProps) {
   return (
-    <View style={styles.card}>
-      <ImageBackground source={{ uri: product.image }} style={styles.cardImage} imageStyle={{ borderRadius: 12 }}/>
-      <Text style={styles.cardName}>{product.name}</Text>
-      <Text style={styles.cardDesc}>{product.description}</Text>
-      <Text style={styles.cardPrice}>${product.price}</Text>
+    <View style={[styles.card, { width: cardWidth }]}>
+      
+      {/* Favorite */}
+      <Pressable style={styles.favorite} onPress={() => addToFavorites(product)}>
+        <AntDesign name="heart" size={18} color="#333" />
+      </Pressable>
 
-      <View style={styles.cardButtons}>
-        <Pressable style={styles.cartBtn} onPress={() => addToCart(product)}>
-          <Text style={styles.cardBtnText}>Add to Cart</Text>
-        </Pressable>
-        <Pressable style={styles.favBtn} onPress={() => addToFavorites(product)}>
-          <Text style={styles.cardBtnText}>♥</Text>
-        </Pressable>
+      {/* Image */}
+      <View style={styles.imageWrapper}>
+        {product.image ? (
+          <Image
+            source={{ uri: `http://localhost:5000/uploads/${product.image}` }}
+            style={styles.image}
+            resizeMode="contain"
+          />
+        ) : (
+          <Text>No Image</Text>
+        )}
+      </View>
+
+      {/* Info */}
+      <View style={styles.info}>
+        <Text style={styles.name} numberOfLines={1}>
+          {product.name}
+        </Text>
+
+        <Text style={styles.description} numberOfLines={2}>
+          {product.description}
+        </Text>
+
+        {/* Rating */}
+        <View style={styles.rating}>
+          {[...Array(5)].map((_, i) => (
+            <AntDesign key={i} name="star" size={12} color="#22c55e" />
+          ))}
+          <Text style={styles.ratingText}>(121)</Text>
+        </View>
+
+        {/* Price + Button */}
+        <View style={styles.bottom}>
+          <Text style={styles.price}>${product.price}</Text>
+
+          <Pressable style={styles.cartBtn} onPress={() => addToCart(product)}>
+            <Text style={styles.cartText}>Add to Cart</Text>
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 }
-
 const styles = StyleSheet.create({
-  card: { width: 200, backgroundColor: '#fff', borderRadius: 15, marginRight: 15, padding: 10 },
-  cardImage: { width: '100%', height: 120, borderRadius: 12, marginBottom: 10 },
-  cardName: { fontSize: 18, fontWeight: '600', marginBottom: 4 },
-  cardDesc: { fontSize: 14, color: '#777', marginBottom: 6 },
-  cardPrice: { fontSize: 16, fontWeight: '700', color: '#111', marginBottom: 10 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 16,
+    margin: 8,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 5,
+  },
 
-  cardButtons: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 },
-  cartBtn: { flex: 1, backgroundColor: '#1e90ff', paddingVertical: 8, borderRadius: 12, marginRight: 8 },
-  favBtn: { width: 50, backgroundColor: '#ff4d6d', paddingVertical: 8, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  cardBtnText: { color: '#fff', fontWeight: '700', textAlign: 'center' },
+  favorite: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    zIndex: 10,
+    backgroundColor: "#fff",
+    padding: 6,
+    borderRadius: 20,
+  },
+
+  imageWrapper: {
+    height: 140,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 10,
+  },
+
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+
+  info: {
+    padding: 12,
+  },
+
+  name: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  description: {
+    fontSize: 12,
+    color: "#6b7280",
+    marginVertical: 4,
+  },
+
+  rating: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginVertical: 4,
+  },
+
+  ratingText: {
+    fontSize: 11,
+    color: "#6b7280",
+    marginLeft: 4,
+  },
+
+  bottom: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+  },
+
+  price: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  cartBtn: {
+    backgroundColor: "#14532d",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
+  cartText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
 });

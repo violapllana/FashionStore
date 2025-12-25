@@ -10,7 +10,7 @@ const Product = sequelize.define("Product", {
   subcategory: { type: DataTypes.STRING }, // e.g. Jackets, Pants
   sizes: { type: DataTypes.JSON }, 
   colors: { type: DataTypes.JSON }, 
-  imageUrl: { type: DataTypes.STRING }
+  image: { type: DataTypes.STRING }
 }, { timestamps: true });
 
 module.exports = Product;

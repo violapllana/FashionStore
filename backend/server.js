@@ -4,6 +4,8 @@ const http = require("http");
 const socketIO = require("socket.io");
 require("dotenv").config();
 const sequelize = require("./config/db");
+const path = require("path");
+
 
 // Për ES Module të open
 const open = (...args) => import('open').then(module => module.default(...args));
@@ -24,7 +26,7 @@ app.use(express.json());
 
 // Swagger setup
 require('./swagger')(app);
-
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
@@ -32,6 +34,8 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/orders", orderRoutes);
+
+
 
 
 // Socket.IO

@@ -282,25 +282,27 @@ export default function Home() {
             </Text>
           </View>
         </ImageBackground>
+<View style={styles.productsSection}>
+  <Text style={styles.sectionTitle}>Popular Products</Text>
 
-        {/* FEATURED PRODUCTS */}
-        <View style={styles.section}>
-          <Text
-            style={[styles.sectionTitle, { fontSize: width > 800 ? 32 : 24 }]}
-          >
-            Featured Products
-          </Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            {filteredProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                addToCart={addToCart}
-                addToFavorites={addToFavorites}
-              />
-            ))}
-          </ScrollView>
-        </View>
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.horizontalList}
+  >
+    {filteredProducts.map((product) => (
+      <ProductCard
+        key={product.id}
+        product={product}
+        addToCart={addToCart}
+        addToFavorites={addToFavorites}
+      />
+    ))}
+  </ScrollView>
+</View>
+
+
+
 
         {/* FOOTER */}
         <Footer />
@@ -581,5 +583,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#00d1b2",
     borderRadius: 8,
   },
-  sidebarText: { color: "#121212", fontWeight: "700" },
+productsSection: {
+  marginTop: 30,
+  paddingLeft: 15,
+},
+horizontalList: {
+  paddingRight: 20,
+},
+sidebarText: { color: "#121212", fontWeight: "700" },
 });
