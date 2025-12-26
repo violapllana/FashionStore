@@ -20,7 +20,7 @@ interface Product {
   id: number;
   name: string;
   description: string;
-  image: string;
+  image?: string;
   price: number;
   quantity?: number;
 }
@@ -301,12 +301,19 @@ export default function Home() {
   </ScrollView>
 </View>
 
+   <Pressable
+  style={styles.viewAllBtn}
+  onPress={() => router.push("/user/productsList")}
+>
+  <Text style={styles.viewAllText}>View All Products →</Text>
+</Pressable>
 
 
 
         {/* FOOTER */}
         <Footer />
       </ScrollView>
+   
 
       {sidebarOpen && (
         <View style={styles.overlay}>
@@ -590,5 +597,20 @@ productsSection: {
 horizontalList: {
   paddingRight: 20,
 },
+viewAllBtn: {
+  marginTop: 15,
+  alignSelf: "flex-end",
+  marginRight: 20,
+  paddingVertical: 8,
+  paddingHorizontal: 14,
+  backgroundColor: "#000",
+  borderRadius: 20,
+},
+viewAllText: {
+  color: "#fff",
+  fontWeight: "600",
+  fontSize: 14,
+},
+
 sidebarText: { color: "#121212", fontWeight: "700" },
 });

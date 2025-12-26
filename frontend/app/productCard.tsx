@@ -3,7 +3,8 @@ import React from "react";
 import { AntDesign } from "@expo/vector-icons";
 
 const { width } = Dimensions.get("window");
-const cardWidth = width / 2.2;
+const cardWidth = width / 3 - 16; // 3 produkte për rresht me margin
+
 
 interface Product {
   id: number;
@@ -78,30 +79,31 @@ export default function ProductCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "#fff",
-    borderRadius: 16,
-    margin: 8,
+    borderRadius: 14,
+    marginBottom: 14,
     shadowColor: "#000",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 5,
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 4,
   },
 
   favorite: {
     position: "absolute",
-    top: 10,
-    right: 10,
+    top: 8,
+    right: 8,
     zIndex: 10,
     backgroundColor: "#fff",
-    padding: 6,
+    padding: 5,
     borderRadius: 20,
+    elevation: 2,
   },
 
   imageWrapper: {
-    height: 140,
+    height: 100, // 🔥 më kompakte për fashion
     justifyContent: "center",
     alignItems: "center",
-    padding: 10,
+    padding: 6,
   },
 
   image: {
@@ -110,56 +112,55 @@ const styles = StyleSheet.create({
   },
 
   info: {
-    padding: 12,
+    paddingHorizontal: 8,
+    paddingBottom: 10,
   },
 
   name: {
-    fontSize: 15,
+    fontSize: 12,
     fontWeight: "700",
     color: "#111",
   },
 
   description: {
-    fontSize: 12,
+    fontSize: 10,
     color: "#6b7280",
-    marginVertical: 4,
+    marginVertical: 2,
   },
 
   rating: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: 4,
+    marginVertical: 2,
   },
 
   ratingText: {
-    fontSize: 11,
+    fontSize: 10,
     color: "#6b7280",
     marginLeft: 4,
   },
 
   bottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
+    marginTop: 6,
   },
 
   price: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "700",
     color: "#111",
+    marginBottom: 6,
   },
 
   cartBtn: {
     backgroundColor: "#14532d",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingVertical: 5,
+    borderRadius: 16,
+    alignItems: "center",
   },
 
   cartText: {
     color: "#fff",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
   },
 });
