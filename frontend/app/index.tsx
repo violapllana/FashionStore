@@ -11,6 +11,8 @@ import {
   TextInput,
 } from "react-native";
 import { useNavigation, useRouter } from "expo-router";
+
+
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import ProductCard from "./productCard";
@@ -26,6 +28,7 @@ interface Product {
 }
 
 export default function Home() {
+
   const router = useRouter();
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
@@ -45,20 +48,20 @@ export default function Home() {
 
   const API_URL = "http://localhost:5000/api";
 
-  // 🔹 CHECK LOGIN
-  const requireLogin = () => {
-    const token = AsyncStorage.getItem("token");
-    if (!token) {
-      setModalMessage("Please login to continue");
-      setModalVisible(true);
-      setTimeout(() => {
-        setModalVisible(false);
-        router.push("/login");
-      }, 1200);
-      return false;
-    }
-    return true;
-  };
+const requireLogin = async () => {
+  const token = await AsyncStorage.getItem("token");
+  if (!token) {
+    setModalMessage("Please login to continue");
+    setModalVisible(true);
+    setTimeout(() => {
+      setModalVisible(false);
+      router.push("/login");
+    }, 1200);
+    return false;
+  }
+  return true;
+};
+
 
   // 🔹 FETCH PRODUCTS
   useEffect(() => {
@@ -143,39 +146,41 @@ export default function Home() {
       return [...prev, product];
     });
   };
-  const placeOrder = async () => {
-    if (!requireLogin()) return;
-    if (cart.length === 0) {
-      setModalMessage("Your cart is empty!");
-      setModalVisible(true);
-      return;
-    }
+const placeOrder = async () => {
+  if (!(await requireLogin())) return;
 
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const items = cart.map((p) => ({
-        productId: p.id,
-        quantity: p.quantity || 1,
-      }));
+  if (cart.length === 0) {
+    setModalMessage("Your cart is empty!");
+    setModalVisible(true);
+    return;
+  }
 
-      const res = await axios.post(
-        `${API_URL}/orders`,
-        { items },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+  try {
+    const token = await AsyncStorage.getItem("token");
 
-      setOrders(res.data.items || res.data);
-      setCart([]);
-      setModalMessage("Order placed successfully!");
-      setModalVisible(true);
-    } catch (err) {
-      console.log(err);
-      setModalMessage("Could not place order");
-      setModalVisible(true);
-    }
-  };
+    const items = cart.map((p) => ({
+      productId: p.id,
+      quantity: p.quantity || 1,
+      price: p.price,
+    }));
+
+    await axios.post(
+      `${API_URL}/orders`,
+      { items },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    await fetchOrders(); // ✅ KËTU LEJOHET
+    setCart([]);
+    setModalMessage("Order placed successfully!");
+    setModalVisible(true);
+  } catch (err) {
+    console.log(err);
+    setModalMessage("Could not place order");
+    setModalVisible(true);
+  }
+};
+
 
   const handleLogout = async () => {
     await AsyncStorage.clear();

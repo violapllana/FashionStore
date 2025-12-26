@@ -20,11 +20,9 @@ interface ProductCardProps {
   addToFavorites: (product: Product) => void;
 }
 
-export default function ProductCard({
-  product,
-  addToCart,
-  addToFavorites,
-}: ProductCardProps) {
+export default function ProductCard(props: { product: any; addToCart: any; addToFavorites: any; }) {
+
+  const { product, addToCart, addToFavorites } = props;
   return (
     <View style={[styles.card, { width: cardWidth }]}>
       

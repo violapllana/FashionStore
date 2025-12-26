@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, Alert, Pressable, Modal } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, Alert, Pressable, Modal, Picker } from 'react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
@@ -21,13 +21,17 @@ interface Order {
 export default function OrdersList() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
-
   const [statusModalVisible, setStatusModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [sortOption, setSortOption] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  useEffect(() => {
+    sortOrders(sortOption);
+  }, [sortOption, orders]);
 
   const fetchOrders = async () => {
     try {
@@ -49,6 +53,13 @@ export default function OrdersList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const sortOrders = (option: 'newest' | 'oldest') => {
+    setOrders(prev => [...prev].sort((a, b) => {
+      if (option === 'newest') return b.id - a.id; // te rejat → lart
+      return a.id - b.id; // te vjetrat → lart
+    }));
   };
 
   const deleteOrder = async (id: number) => {
@@ -89,6 +100,22 @@ export default function OrdersList() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Manage Orders</Text>
+
+      {/* Sort Buttons */}
+      <View style={{ flexDirection:'row', marginBottom:10, gap:10 }}>
+        <Pressable
+          style={[styles.btn, sortOption==='newest'?{backgroundColor:'#0066ff'}:{}]}
+          onPress={()=>setSortOption('newest')}
+        >
+          <Text style={styles.btnText}>Newest</Text>
+        </Pressable>
+        <Pressable
+          style={[styles.btn, sortOption==='oldest'?{backgroundColor:'#0066ff'}:{}]}
+          onPress={()=>setSortOption('oldest')}
+        >
+          <Text style={styles.btnText}>Oldest</Text>
+        </Pressable>
+      </View>
 
       <View style={styles.table}>
         <View style={[styles.row, styles.headerRow]}>
