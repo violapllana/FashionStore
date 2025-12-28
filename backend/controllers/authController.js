@@ -103,7 +103,8 @@ exports.register = async (req, res) => {
       return res.status(400).json({ message: "Email & password required" });
 
     const exists = await User.findOne({ where: { email } });
-    if (exists) return res.status(400).json({ message: "Email exists" });
+    if (exists)
+      return res.status(400).json({ message: "Email already exists" });
 
     const hashed = await bcrypt.hash(password, 10);
 
@@ -115,19 +116,50 @@ exports.register = async (req, res) => {
       isVerified: false
     });
 
+    // 🔐 token për verifikim
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: "1d"
     });
 
     const verifyUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
 
+    // 📧 EMAIL = OPTIONAL
+    try {
+      await sendMail({
+        to: user.email,
+        subject: "Verify your email",
+        html: `Click <a href="${verifyUrl}">here</a> to verify your email`
+      });
+    } catch (emailErr) {
+      console.log("Email failed:", emailErr.message);
+    }
+
+    // ✅ REGISTER = SUCCESS GJITHMONË
+    res.status(201).json({
+      message: "Registered successfully. Please verify your email.",
+      userId: user.id
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+exports.resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.isVerified) return res.status(400).json({ message: "Email already verified" });
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
+    const verifyUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+
     await sendMail({
       to: user.email,
       subject: "Verify your email",
-      html: `Click <a href="${verifyUrl}">here</a> to verify your email`
+      html: `Click <a href="${verifyUrl}">here</a> to verify your email`,
     });
 
-    res.json({ message: "Registered. Verify email." });
+    res.json({ message: "Verification email sent" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -266,10 +298,10 @@ exports.refresh = async (req, res) => {
   }
 };
 
-
 exports.forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    console.log("Forgot password request:", email);
 
     const user = await User.findOne({ where: { email } });
     if (!user)
@@ -281,17 +313,23 @@ exports.forgotPassword = async (req, res) => {
 
     const url = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    await sendMail({
-      to: user.email,
-      subject: "Reset password",
-      html: `Click <a href="${url}">here</a> to reset password`
-    });
+    // 🔹 Për testing: mos dërgo email, vetëm shfaq linkun
+    // await sendMail({
+    //   to: user.email,
+    //   subject: "Reset password",
+    //   html: `Click <a href="${url}">here</a> to reset password`
+    // });
 
-    res.json({ message: "If user exists, reset email sent" });
+    console.log(`Reset password URL: ${url}`);
+
+    res.json({ message: "If user exists, reset email sent", resetUrl: url }); // optional resetUrl for testing
   } catch (err) {
+    console.error("Forgot password error:", err);
     res.status(500).json({ message: err.message });
   }
 };
+
+
 
 exports.resetPassword = async (req, res) => {
   try {

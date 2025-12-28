@@ -283,4 +283,6 @@ router.get("/profile", auth, ctrl.getProfile);
  */
 router.put("/profile", auth, ctrl.updateProfile);
 
+router.post("/resend-verification" , ctrl.resendVerification);
+
 module.exports = router;
