@@ -44,10 +44,14 @@ export default function Footer() {
 }
 
 const styles = StyleSheet.create({
-  footer: {
+  footer: {  width: "100%", // Jo e plotë si ekran, të ngushtë si kartat
+    justifyContent: "center",
     backgroundColor: '#111',
-    paddingVertical: 24,
-    paddingHorizontal: 16,
+    padding: 16,
+    marginTop: 16,
+    marginBottom: 16,
+    
+
   },
   column: {
     marginRight: 24,

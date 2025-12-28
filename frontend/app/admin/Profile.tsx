@@ -99,8 +99,8 @@ export default function ProfileScreen() {
     <ScrollView style={styles.container}>
       {/* HEADER */}
       <View style={styles.topBar}>
-        <Pressable onPress={() => router.push("/")}>
-          <Text style={styles.title}>FashionStore</Text>
+        <Pressable onPress={() => router.push("/admin/dashboard")}>
+          <Text style={styles.title}>Dashboard</Text>
         </Pressable>
         <View style={styles.headerRight}>
           {role && (

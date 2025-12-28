@@ -498,7 +498,13 @@ export default function ProductsPage() {
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       {/* HEADER */}
       <Header
-        title="FashionStore"
+        title={
+    <Pressable onPress={() => router.push("/")}>
+      <Text style={{ color: "#fff", fontSize: 20, fontWeight: "700" }}>
+        FashionStore
+      </Text>
+    </Pressable>
+  }
         role={role}
         cart={cart}
         favorites={favorites}

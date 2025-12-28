@@ -7,24 +7,22 @@ const sequelize = require("./config/db");
 const path = require("path");
 
 
-// Për ES Module të open
 const open = (...args) => import('open').then(module => module.default(...args));
 
-// Routes
+
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const favoriteRoutes = require("./routes/favoriteRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const contactRoutes = require("./routes/contactRoutes");
 
-
-// Create Express app
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Swagger setup
+
 require('./swagger')(app);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 // Routes
@@ -34,6 +32,8 @@ app.use("/api/favorites", favoriteRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/contact", contactRoutes);
+
 
 
 
