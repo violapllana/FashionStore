@@ -9,6 +9,10 @@ interface User {
   name: string;
   email: string;
   role: string;
+  addressLine?: string;
+  city?: string;
+  postalCode?: string;
+  phone?: string;
 }
 
 interface UserForm {
@@ -16,6 +20,10 @@ interface UserForm {
   email: string;
   role: 'admin' | 'user';
   password?: string;
+  addressLine?: string;
+  city?: string;
+  postalCode?: string;
+  phone?: string;
 }
 
 export default function ManageUsers() {
@@ -23,14 +31,18 @@ export default function ManageUsers() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Modal state
+  // Modal state for create/edit
   const [modalVisible, setModalVisible] = useState(false);
   const [form, setForm] = useState<UserForm>({ name: '', email: '', role: 'user', password: '' });
   const [editId, setEditId] = useState<number | null>(null);
 
-  // Delete modal state
+  // Modal for delete
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  // Modal for details
+  const [detailsModalVisible, setDetailsModalVisible] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -61,10 +73,18 @@ export default function ManageUsers() {
 
   const openForm = (user?: User) => {
     if (user) {
-      setForm({ name: user.name, email: user.email, role: user.role as 'admin' | 'user' });
+      setForm({
+        name: user.name,
+        email: user.email,
+        role: user.role as 'admin' | 'user',
+        addressLine: user.addressLine || '',
+        city: user.city || '',
+        postalCode: user.postalCode || '',
+        phone: user.phone || '',
+      });
       setEditId(user.id);
     } else {
-      setForm({ name: '', email: '', role: 'user', password: '' });
+      setForm({ name: '', email: '', role: 'user', password: '', addressLine:'', city:'', postalCode:'', phone:'' });
       setEditId(null);
     }
     setModalVisible(true);
@@ -77,7 +97,7 @@ export default function ManageUsers() {
 
       if (editId) {
         await axios.put(`http://localhost:5000/api/auth/users/${editId}`, 
-          { name: form.name, email: form.email, role: form.role },
+          form,
           { headers: { Authorization: `Bearer ${token}` } }
         );
       } else {
@@ -96,7 +116,6 @@ export default function ManageUsers() {
     }
   };
 
-  // Open delete modal
   const confirmDelete = (id: number) => {
     setDeleteId(id);
     setDeleteModalVisible(true);
@@ -114,6 +133,11 @@ export default function ManageUsers() {
     } catch (err: any) {
       console.log(err);
     }
+  };
+
+  const openDetails = (user: User) => {
+    setSelectedUser(user);
+    setDetailsModalVisible(true);
   };
 
   return (
@@ -144,6 +168,9 @@ export default function ManageUsers() {
                 <Text style={styles.cell}>{user.email}</Text>
                 <Text style={styles.cell}>{user.role}</Text>
                 <View style={[styles.cell, styles.actionsCol]}>
+                  <Pressable style={styles.detailsBtn} onPress={() => openDetails(user)}>
+                    <Text style={styles.btnText}>Details</Text>
+                  </Pressable>
                   <Pressable style={styles.editBtn} onPress={() => openForm(user)}>
                     <Text style={styles.btnText}>Edit</Text>
                   </Pressable>
@@ -202,6 +229,32 @@ export default function ManageUsers() {
               </Pressable>
             </View>
 
+            {/* Address fields */}
+            <TextInput
+              style={styles.input}
+              placeholder="Address Line"
+              value={form.addressLine}
+              onChangeText={text => setForm({ ...form, addressLine: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="City"
+              value={form.city}
+              onChangeText={text => setForm({ ...form, city: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Postal Code"
+              value={form.postalCode}
+              onChangeText={text => setForm({ ...form, postalCode: text })}
+            />
+            <TextInput
+              style={styles.input}
+              placeholder="Phone"
+              value={form.phone}
+              onChangeText={text => setForm({ ...form, phone: text })}
+            />
+
             <Pressable style={styles.btn} onPress={handleSubmit}>
               <Text style={styles.btnText}>{editId ? 'Update' : 'Create'}</Text>
             </Pressable>
@@ -227,6 +280,29 @@ export default function ManageUsers() {
                 <Text style={styles.btnText}>No</Text>
               </Pressable>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Details modal */}
+      <Modal visible={detailsModalVisible} animationType="slide" transparent={true}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>User Details</Text>
+            {selectedUser && (
+              <>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>Name:</Text> {selectedUser.name}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>Email:</Text> {selectedUser.email}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>Role:</Text> {selectedUser.role}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>Address Line:</Text> {selectedUser.addressLine || '-'}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>City:</Text> {selectedUser.city || '-'}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>Postal Code:</Text> {selectedUser.postalCode || '-'}</Text>
+                <Text style={styles.detailText}><Text style={{fontWeight:'700'}}>Phone:</Text> {selectedUser.phone || '-'}</Text>
+              </>
+            )}
+            <Pressable style={[styles.btn, { marginTop: 20 }]} onPress={() => setDetailsModalVisible(false)}>
+              <Text style={styles.btnText}>Close</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -264,6 +340,7 @@ const styles = StyleSheet.create({
   actionsCol: { flexDirection: 'row', justifyContent: 'flex-end', gap: 10 },
   editBtn: { backgroundColor: '#0066ff', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
   deleteBtn: { backgroundColor: '#ff3860', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8 },
+  detailsBtn: { backgroundColor: '#00d1b2', paddingVertical: 8, paddingHorizontal: 18, borderRadius: 8, marginRight: 5 },
   btnText: { color: '#fff', fontWeight: '700', textAlign: 'center' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.8)', justifyContent: 'center', padding: 20 },
   modalContent: { backgroundColor: '#1e1e1e', borderRadius: 12, padding: 20 },
@@ -272,4 +349,5 @@ const styles = StyleSheet.create({
   btn: { backgroundColor: '#00d1b2', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
   roleBtn: { paddingVertical: 10, paddingHorizontal: 20, borderRadius: 8, backgroundColor: '#333', color:'#fff' },
   selectedRole: { backgroundColor: '#00d1b2', color: '#121212' },
+  detailText: { color:'#fff', marginBottom:10, fontSize:16 }
 });

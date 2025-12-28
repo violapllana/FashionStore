@@ -33,7 +33,7 @@ export default function Footer() {
         <Pressable onPress={() => router.push('/user/favorite')}>
           <Text style={styles.link}>Favorite</Text>
         </Pressable>
-            <Pressable onPress={() => router.push('/productCard')}>
+            <Pressable onPress={() => router.push('/user/productsList')}>
           <Text style={styles.link}>Products</Text>
         </Pressable>
         </View>

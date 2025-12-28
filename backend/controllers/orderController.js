@@ -27,13 +27,19 @@ const getOrders = async (req, res) => {
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };
-
-// POST /api/orders
 const createOrder = async (req, res) => {
   try {
-    // Merr cart items të user-it
+    const user = req.user;
+
+    // 🔴 kontrollo a ka adresë
+    if (!user.addressLine || !user.city) {
+      return res.status(400).json({ 
+        message: "Please add delivery address in your profile" 
+      });
+    }
+
     const cartItems = await CartItem.findAll({
-      where: { UserId: req.user.id },
+      where: { UserId: user.id },
       include: [Product],
     });
 
@@ -46,12 +52,17 @@ const createOrder = async (req, res) => {
       0
     );
 
+    // 🔽 ADRESA SNAPSHOT
+    const fullAddress = `${user.addressLine}, ${user.city} ${user.postalCode || ""}`;
+
     const order = await Order.create({
-      UserId: req.user.id,
+      UserId: user.id,
       totalPrice,
+      deliveryAddress: fullAddress,
+      paymentMethod: "CASH",
+      paymentStatus: "UNPAID"
     });
 
-    // Krijo OrderItems
     for (const item of cartItems) {
       await OrderItem.create({
         OrderId: order.id,
@@ -61,8 +72,7 @@ const createOrder = async (req, res) => {
       });
     }
 
-    // Pas suksesit, pastro cart
-    await CartItem.destroy({ where: { UserId: req.user.id } });
+    await CartItem.destroy({ where: { UserId: user.id } });
 
     const newOrder = await Order.findByPk(order.id, {
       include: [{ model: OrderItem, as: "items", include: [Product] }],
@@ -70,7 +80,6 @@ const createOrder = async (req, res) => {
 
     res.json(newOrder);
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 };

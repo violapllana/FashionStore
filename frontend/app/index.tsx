@@ -455,14 +455,15 @@ import ProductCard from "./productCard";
 import Footer from "./footer";
 
 interface Product {
+  items: any;
   id: number;
   name: string;
   description: string;
   image?: string;
   price: number;
   quantity?: number;
-  Product?: { name: string }; // backend relation
-  ProductId?: number; // backend favorite relation
+  Product?: { id: number; name: string }; 
+  ProductId?: number; 
 }
 
 export default function Home() {
@@ -498,7 +499,7 @@ export default function Home() {
     return true;
   };
 
-  // 🔹 FETCH PRODUCTS
+
   useEffect(() => {
     AsyncStorage.getItem("role").then((r) => setRole(r));
     axios
@@ -510,7 +511,7 @@ export default function Home() {
       .catch((err) => console.log(err));
   }, []);
 
-  // 🔹 FETCH CART, FAVORITES, ORDERS
+
   useEffect(() => {
     if (!role) return;
     const token = AsyncStorage.getItem("token");
@@ -530,7 +531,6 @@ export default function Home() {
     });
   }, [role]);
 
-  // 🔹 SEARCH
   useEffect(() => {
     if (!searchQuery) setFilteredProducts(products);
     else
@@ -541,7 +541,7 @@ export default function Home() {
       );
   }, [searchQuery, products]);
 
-  // 🔹 CART FUNCTIONS
+
   const addToCart = async (product: Product) => {
     if (!(await requireLogin())) return;
     const token = await AsyncStorage.getItem("token");
@@ -576,7 +576,7 @@ export default function Home() {
     }
   };
 
-  // 🔹 FAVORITES FUNCTIONS
+
   const addToFavorites = async (product: Product) => {
     if (!(await requireLogin())) return;
     const token = await AsyncStorage.getItem("token");
@@ -606,7 +606,7 @@ export default function Home() {
     }
   };
 
-  // 🔹 PLACE ORDER
+
   const placeOrder = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
@@ -642,12 +642,12 @@ export default function Home() {
     router.push("/");
   };
 
-  // 🔹 HERO HEIGHT
+
   const heroHeight = width > 800 ? 500 : 420;
 
   return (
     <View style={{ flex: 1 }}>
-      {/* HEADER & SEARCH */}
+
       <View style={styles.topBar}>
         <Pressable onPress={() => setSidebarOpen(true)}>
           <Text style={styles.menuIcon}>☰</Text>
@@ -691,7 +691,7 @@ export default function Home() {
         </View>
       </View>
 
-      {/* HERO */}
+  
       <ScrollView style={styles.container}>
         <ImageBackground
           source={require("../assets/fashion-trends-GettyImages-1457816153-d2982e954afe4b42bf5587f087da90d4.jpg")}
@@ -707,7 +707,7 @@ export default function Home() {
           </View>
         </ImageBackground>
 
-        {/* PRODUCTS */}
+        
         <View style={styles.productsSection}>
           <Text style={styles.sectionTitle}>Popular Products</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
@@ -728,11 +728,20 @@ export default function Home() {
         <Footer />
       </ScrollView>
 
-      {/* SIDEBAR */}
+  
       {sidebarOpen && (
         <View style={styles.overlay}>
           <View style={styles.sidebar}>
             <Text style={styles.logo}>FashionStore</Text>
+<Pressable
+  style={styles.profileBtn}
+  onPress={() => {
+    setSidebarOpen(false);
+    router.push("/user/Profile");
+  }}
+>
+  <Text style={styles.profileText}>👤 My Profile</Text>
+</Pressable>
 
             <Text style={styles.sidebarTitle}>Favorites ({favorites.length})</Text>
             {favorites.length === 0 ? (
@@ -776,7 +785,7 @@ export default function Home() {
         </View>
       )}
 
-      {/* MODAL */}
+
       <Modal visible={modalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -788,7 +797,7 @@ export default function Home() {
         </View>
       </Modal>
 
-      {/* ORDERS MODAL */}
+
       <Modal visible={ordersModalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { width: "80%" }]}>
@@ -982,6 +991,18 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 14,
   },
+profileBtn: {
+  paddingVertical: 12,
+  paddingHorizontal: 15,
+  backgroundColor: "#f2f2f2",
+  borderRadius: 10,
+  marginBottom: 15,
+},
+profileText: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#111",
+},
 
   sidebarText: { color: "#121212", fontWeight: "700" },
 });

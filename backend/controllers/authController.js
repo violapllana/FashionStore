@@ -33,34 +33,60 @@ exports.getProfile = async (req, res) => {
       id: user.id,
       name: user.name,
       email: user.email,
-      role: user.role
+      role: user.role,
+      addressLine: user.addressLine || '',
+      city: user.city || '',
+      postalCode: user.postalCode || '',
+      phone: user.phone || ''
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// UPDATE MY PROFILE
 exports.updateProfile = async (req, res) => {
   try {
     const user = req.user;
-    const { name, email, password } = req.body;
+    const { 
+      name, 
+      email, 
+      password, 
+      addressLine, 
+      city, 
+      postalCode, 
+      phone 
+    } = req.body;
 
     if (name) user.name = name;
     if (email) user.email = email;
     if (password) user.password = await bcrypt.hash(password, 10);
 
+    // 🔽 ADRESA
+    if (addressLine) user.addressLine = addressLine;
+    if (city) user.city = city;
+    if (postalCode) user.postalCode = postalCode;
+    if (phone) user.phone = phone;
+
     await user.save();
-    res.json({ message: "Profile updated", user: {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role
-    }});
+
+    res.json({
+      message: "Profile updated",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        addressLine: user.addressLine,
+        city: user.city,
+        postalCode: user.postalCode,
+        phone: user.phone
+      }
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
+
 exports.isAdmin = (req, res, next) => {
   if (req.user.role !== "admin") {
     return res.status(403).json({ message: "Admin access only" });
@@ -172,7 +198,7 @@ exports.me = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["id", "name", "email", "role", "isVerified", "createdAt"]
+      attributes: ["id", "name", "email", "role", "addressLine", "city", "postalCode", "phone", "isVerified", "createdAt"]
     });
     res.json(users);
   } catch (err) {
@@ -181,10 +207,11 @@ exports.getUsers = async (req, res) => {
 };
 
 
+
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role } = req.body;
+    const { name, email, role, addressLine, city, postalCode, phone } = req.body;
 
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -192,6 +219,12 @@ exports.updateUser = async (req, res) => {
     user.name = name ?? user.name;
     user.email = email ?? user.email;
     user.role = role ?? user.role;
+
+    // 🔹 Add address fields
+    user.addressLine = addressLine ?? user.addressLine;
+    user.city = city ?? user.city;
+    user.postalCode = postalCode ?? user.postalCode;
+    user.phone = phone ?? user.phone;
 
     await user.save();
     res.json({ message: "User updated", user });

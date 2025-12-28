@@ -309,6 +309,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 
 interface Product {
+  items: any;
   quantity?: number;
   id: number;
   name: string;
@@ -317,8 +318,8 @@ interface Product {
   price: number;
   category?: string;
   gender?: string;
-  Product?: { name: string }; // from backend include
-  ProductId?: number; // backend favorite relation
+  Product?: { name: string }; 
+  ProductId?: number; 
 }
 
 export default function ProductsPage() {
@@ -336,7 +337,7 @@ export default function ProductsPage() {
 
   const API_URL = "http://localhost:5000/api";
 
-  // 🔹 FETCH PRODUCTS
+
   useEffect(() => {
     AsyncStorage.getItem("role").then((r) => setRole(r));
     axios
@@ -345,7 +346,7 @@ export default function ProductsPage() {
       .catch((err) => console.log(err));
   }, []);
 
-  // 🔹 FETCH CART, FAVORITES, ORDERS
+
   useEffect(() => {
     if (!role) return;
     const token = AsyncStorage.getItem("token");
@@ -365,7 +366,6 @@ export default function ProductsPage() {
     });
   }, [role]);
 
-  // 🔹 REQUIRE LOGIN
   const requireLogin = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
@@ -380,7 +380,7 @@ export default function ProductsPage() {
     return true;
   };
 
-  // 🔹 CART FUNCTIONS
+
   const addToCart = async (product: Product) => {
     if (!(await requireLogin())) return;
     const token = await AsyncStorage.getItem("token");
@@ -423,7 +423,7 @@ export default function ProductsPage() {
     }
   };
 
-  // 🔹 FAVORITES FUNCTIONS
+ 
   const addToFavorites = async (product: Product) => {
     if (!(await requireLogin())) return;
     const token = await AsyncStorage.getItem("token");
@@ -457,7 +457,7 @@ export default function ProductsPage() {
     }
   };
 
-  // 🔹 PLACE ORDER
+
   const placeOrder = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) {
@@ -484,7 +484,7 @@ export default function ProductsPage() {
     }
   };
 
-  // 🔹 LOGOUT
+
   const handleLogout = async () => {
     await AsyncStorage.clear();
     setRole(null);
@@ -515,14 +515,13 @@ export default function ProductsPage() {
         <Text style={styles.title}>All Products</Text>
         <View style={styles.grid}>
           {products.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              addToCart={addToCart}
-              addToFavorites={addToFavorites}
-              favorites={favorites}
-            />
-          ))}
+              <ProductCard
+                key={p.id}
+                product={p}
+                addToCart={addToCart}
+                addToFavorites={addToFavorites}
+              />
+            ))}
         </View>
         <Footer />
       </ScrollView>
