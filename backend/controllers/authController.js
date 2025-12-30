@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const { User } = require("../models");
 const {
   generateAccessToken,
@@ -34,6 +35,7 @@ exports.getProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
+      isVerified: user.isVerified, 
       addressLine: user.addressLine || '',
       city: user.city || '',
       postalCode: user.postalCode || '',
@@ -43,6 +45,7 @@ exports.getProfile = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 
 exports.updateProfile = async (req, res) => {
   try {
@@ -61,7 +64,7 @@ exports.updateProfile = async (req, res) => {
     if (email) user.email = email;
     if (password) user.password = await bcrypt.hash(password, 10);
 
-    // 🔽 ADRESA
+
     if (addressLine) user.addressLine = addressLine;
     if (city) user.city = city;
     if (postalCode) user.postalCode = postalCode;
@@ -116,14 +119,14 @@ exports.register = async (req, res) => {
       isVerified: false
     });
 
-    // 🔐 token për verifikim
+
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: "1d"
     });
 
     const verifyUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
 
-    // 📧 EMAIL = OPTIONAL
+
     try {
       await sendMail({
         to: user.email,
@@ -134,7 +137,7 @@ exports.register = async (req, res) => {
       console.log("Email failed:", emailErr.message);
     }
 
-    // ✅ REGISTER = SUCCESS GJITHMONË
+
     res.status(201).json({
       message: "Registered successfully. Please verify your email.",
       userId: user.id
@@ -143,25 +146,39 @@ exports.register = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
 exports.resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
-    const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(404).json({ message: "User not found" });
-    if (user.isVerified) return res.status(400).json({ message: "Email already verified" });
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1d" });
-    const verifyUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+    if (!email)
+      return res.status(400).json({ message: "Email required" });
+
+    const user = await User.findOne({ where: { email } });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
+
+    if (user.isVerified)
+      return res.status(400).json({ message: "Email already verified" });
+
+ 
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "1d"
+    });
+
+    const link = `${process.env.FRONTEND_URL}/verify?token=${token}`;
+    
 
     await sendMail({
       to: user.email,
       subject: "Verify your email",
-      html: `Click <a href="${verifyUrl}">here</a> to verify your email`,
+      html: `<p>Click to verify your email:</p><a href="${link}">${link}</a>`
     });
 
     res.json({ message: "Verification email sent" });
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error("Resend verification error:", err.message);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -170,14 +187,25 @@ exports.verifyEmail = async (req, res) => {
   try {
     const { token } = req.query;
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
     const user = await User.findByPk(decoded.id);
     if (!user) return res.status(400).json({ message: "Invalid token" });
 
-    user.isVerified = true;
-    await user.save();
+    if (!user.isVerified) {
+      user.isVerified = true;
+      await user.save();
+    }
 
-    res.json({ message: "Email verified" });
+
+    res.json({
+      message: "Email verified successfully",
+      user: {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+    });
   } catch (err) {
     res.status(400).json({ message: "Invalid or expired token" });
   }
@@ -188,27 +216,40 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password)
+      return res.status(400).json({ message: "Email and password required" });
+
     const user = await User.findOne({ where: { email } });
-    if (!user) return res.status(400).json({ message: "Invalid credentials" });
+    if (!user)
+      return res.status(404).json({ message: "User not found" });
 
-    const ok = await bcrypt.compare(password, user.password);
-    if (!ok) return res.status(400).json({ message: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch)
+      return res.status(401).json({ message: "Invalid credentials" });
 
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
+    const token = jwt.sign(
+      {
+        id: user.id,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
 
     res.json({
-      accessToken,
-      refreshToken,
+      accessToken: token,
       user: {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role
-      }
+        role: user.role,
+        isVerified: user.isVerified,
+      },
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
+  } catch (error) {
+    console.error("LOGIN ERROR:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -252,7 +293,7 @@ exports.updateUser = async (req, res) => {
     user.email = email ?? user.email;
     user.role = role ?? user.role;
 
-    // 🔹 Add address fields
+
     user.addressLine = addressLine ?? user.addressLine;
     user.city = city ?? user.city;
     user.postalCode = postalCode ?? user.postalCode;
@@ -313,16 +354,9 @@ exports.forgotPassword = async (req, res) => {
 
     const url = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    // 🔹 Për testing: mos dërgo email, vetëm shfaq linkun
-    // await sendMail({
-    //   to: user.email,
-    //   subject: "Reset password",
-    //   html: `Click <a href="${url}">here</a> to reset password`
-    // });
-
     console.log(`Reset password URL: ${url}`);
 
-    res.json({ message: "If user exists, reset email sent", resetUrl: url }); // optional resetUrl for testing
+    res.json({ message: "If user exists, reset email sent", resetUrl: url }); 
   } catch (err) {
     console.error("Forgot password error:", err);
     res.status(500).json({ message: err.message });

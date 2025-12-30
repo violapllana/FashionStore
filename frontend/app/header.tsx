@@ -1,91 +1,95 @@
-// Header.tsx
-import React from "react";
+
+import { useEffect, useState } from "react";
 import { View, Text, Pressable, TextInput, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface HeaderProps {
-  title: string;
-  role?: string | null;
-  cart?: any[];
-  favorites?: any[];
-  orders?: any[];
-  searchQuery?: string;
-  setSearchQuery?: (query: string) => void;
-  onMenuPress: () => void;
-  onLogout?: () => void;
-  onOrdersPress?: () => void;
+  favoritesCount?: number;
+  cartCount?: number;
+  ordersCount?: number;
 }
 
 export default function Header({
-  title,
-  role,
-  cart = [],
-  favorites = [],
-  orders = [],
-  searchQuery = "",
-  setSearchQuery,
-  onMenuPress,
-  onLogout,
-  onOrdersPress,
+  favoritesCount = 0,
+  cartCount = 0,
+  ordersCount = 0,
 }: HeaderProps) {
   const router = useRouter();
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    AsyncStorage.getItem("role").then((r) => setRole(r));
+  }, []);
+
+  const handleLogout = async () => {
+    await AsyncStorage.clear();
+    setRole(null);
+    router.push("/");
+  };
+
+  const handleMenu = () => {
+    console.log("Menu clicked");
+  };
+
+  const handleFavorites = () => {
+    console.log("Favorites clicked");
+  };
+
+  const handleCart = () => {
+    console.log("Cart clicked");
+  };
+
+  const handleOrders = () => {
+    console.log("Orders clicked");
+  };
 
   return (
     <View style={styles.topBar}>
-      <Pressable onPress={onMenuPress}>
+      <Pressable onPress={handleMenu}>
         <Text style={styles.menuIcon}>☰</Text>
       </Pressable>
 
-      <Text style={styles.title}>{title}</Text>
+      <Pressable onPress={() => router.push("/")}>
+        <Text style={styles.title}>FashionStore</Text>
+      </Pressable>
 
-      <View style={styles.searchContainer}>
-        {setSearchQuery && (
-          <TextInput
-            placeholder="Search..."
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholderTextColor="#ccc"
-            style={styles.searchInput}
-          />
-        )}
-      </View>
+      <TextInput
+        placeholder="Search..."
+        style={styles.searchInput}
+        placeholderTextColor="#ccc"
+      />
 
       <View style={styles.headerRight}>
         {role && (
           <>
-            <Pressable onPress={onMenuPress} style={{ marginRight: 10 }}>
-              <Text style={styles.iconText}>♥ ({favorites.length})</Text>
+            <Pressable onPress={handleFavorites}>
+              <Text style={styles.iconText}>♥ ({favoritesCount})</Text>
             </Pressable>
-            <Pressable onPress={onMenuPress} style={{ marginRight: 10 }}>
-              <Text style={styles.iconText}>🛒 ({cart.length})</Text>
+            <Pressable onPress={handleCart}>
+              <Text style={styles.iconText}>🛒 ({cartCount})</Text>
             </Pressable>
-            <Pressable onPress={onOrdersPress} style={{ marginRight: 10 }}>
-              <Text style={styles.iconText}>📦 ({orders.length})</Text>
+            <Pressable onPress={handleOrders}>
+              <Text style={styles.iconText}>📦 ({ordersCount})</Text>
             </Pressable>
           </>
         )}
 
         {role ? (
-          <Pressable
-            style={styles.logoutBtn}
-            onPress={() => {
-              if (onLogout) onLogout();
-              router.push("/"); // redirect në Home pas logout
-            }}
-          >
+          <Pressable onPress={handleLogout} style={styles.logoutBtn}>
             <Text style={styles.btnText}>Logout</Text>
           </Pressable>
         ) : (
           <>
             <Pressable
-              style={styles.loginBtn}
               onPress={() => router.push("/login")}
+              style={styles.loginBtn}
             >
               <Text style={styles.btnText}>Login</Text>
             </Pressable>
             <Pressable
-              style={styles.registerBtn}
               onPress={() => router.push("/register")}
+              style={styles.registerBtn}
             >
               <Text style={styles.btnText}>Register</Text>
             </Pressable>
@@ -105,36 +109,37 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 15,
   },
-  menuIcon: { color: "#fff", fontSize: 26 },
-  title: { color: "#fff", fontSize: 20, fontWeight: "bold" },
-  searchContainer: { flex: 1, marginHorizontal: 10 },
+  menuIcon: { color: "#fff", fontSize: 28 },
+  title: { color: "#fff", fontSize: 20, fontWeight: "700" },
+  headerRight: { flexDirection: "row", alignItems: "center" },
   searchInput: {
-    height: 38,
-    backgroundColor: "#222",
-    borderRadius: 8,
+    backgroundColor: "#111",
+    borderRadius: 12,
     paddingHorizontal: 10,
+    height: 35,
+    fontSize: 14,
     color: "#fff",
   },
-  headerRight: { flexDirection: "row", alignItems: "center" },
-  iconText: { color: "#fff", fontWeight: "700" },
-  logoutBtn: {
-    backgroundColor: "#e11d48",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
+  iconText: { color: "#fff", marginHorizontal: 8 },
   loginBtn: {
-    backgroundColor: "#2563eb",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    marginRight: 5,
+    backgroundColor: "#000",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginRight: 8,
   },
   registerBtn: {
-    backgroundColor: "#16a34a",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    backgroundColor: "#000",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+    marginRight: 8,
   },
-  btnText: { color: "#fff", fontWeight: "700" },
+  logoutBtn: {
+    backgroundColor: "#000",
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20,
+  },
+  btnText: { textAlign: "center", color: "#fff", fontSize: 14, fontWeight: "600" },
 });

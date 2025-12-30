@@ -10,7 +10,7 @@ const User = sequelize.define("User", {
   fcm_token: { type: DataTypes.STRING, allowNull: true },
   isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
 
-  // 🔽 ADRESA
+
   addressLine: { type: DataTypes.STRING, allowNull: true },
   city: { type: DataTypes.STRING, allowNull: true },
   postalCode: { type: DataTypes.STRING, allowNull: true },

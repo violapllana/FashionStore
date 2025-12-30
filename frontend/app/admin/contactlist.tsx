@@ -90,11 +90,14 @@ export default function ContactList() {
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <Header
-        title="Contacts"
+        title={
+    <Pressable onPress={() => router.push("/admin/dashboard")}>
+      <Text style={{ color: "#fff", fontSize: 20, fontWeight: "700" }}>
+        Dashboard
+      </Text>
+    </Pressable>
+  }
         role={role}
-        cart={[]}
-        favorites={[]}
-        orders={[]}
         searchQuery=""
         setSearchQuery={() => {}}
         onMenuPress={() => {}}
