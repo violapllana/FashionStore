@@ -2,6 +2,8 @@ const { DataTypes } = require("sequelize");
 const sequelize = require("../config/db");
 const User = require("./User");
 const Product = require("./Product");
+
+
 const Order = sequelize.define("Order", {
   id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
   totalPrice: { type: DataTypes.FLOAT, allowNull: false },

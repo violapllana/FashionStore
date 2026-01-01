@@ -89,10 +89,11 @@ export default function ManageProducts() {
       );
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      quality: 0.7,
-    });
+  const result = await ImagePicker.launchImageLibraryAsync({
+  mediaTypes: ImagePicker.MediaTypeOptions.Images,
+  quality: 0.7,
+});
+
 
     if (!result.canceled) setSelectedImage(result.assets[0]);
   };
@@ -125,75 +126,80 @@ export default function ManageProducts() {
     setModalVisible(true);
   };
 
-  const handleSubmit = async () => {
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem("token");
+const handleSubmit = async () => {
+  try {
+    setLoading(true);
+    const token = await AsyncStorage.getItem("token");
 
-      const formData = new FormData();
-      formData.append("name", form.name);
-      formData.append("description", form.description);
-      formData.append("price", form.price);
-      formData.append("category", form.category);
-      formData.append(
-        "sizes",
-        JSON.stringify(
-          form.sizes
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        )
-      );
+    const formData = new FormData();
+    formData.append("name", form.name);
+    formData.append("description", form.description);
+    formData.append("price", form.price);
+    formData.append("category", form.category);
 
-      formData.append(
-        "colors",
-        JSON.stringify(
-          form.colors
-            .split(",")
-            .map((c) => c.trim())
-            .filter(Boolean)
-        )
-      );
+    formData.append(
+      "sizes",
+      JSON.stringify(
+        form.sizes
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean)
+      )
+    );
 
-      if (selectedImage?.uri && !selectedImage.uri.startsWith("data:image")) {
-        const uriParts = selectedImage.uri.split(".");
-        const fileType = uriParts[uriParts.length - 1];
-        formData.append("image", {
-          uri: selectedImage.uri,
-          name: `photo.${fileType}`,
-          type: `image/${fileType}`,
-        } as any);
-      }
+    formData.append(
+      "colors",
+      JSON.stringify(
+        form.colors
+          .split(",")
+          .map((c) => c.trim())
+          .filter(Boolean)
+      )
+    );
 
-      if (editId) {
-        await axios.put(
-          `http://localhost:5000/api/products/${editId}`,
-          formData,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "multipart/form-data",
-            },
-          }
-        );
-      } else {
-        await axios.post("http://localhost:5000/api/products", formData, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        });
-      }
-
-      setModalVisible(false);
-      setSelectedImage(null);
-      fetchProducts();
-    } catch (err) {
-      Alert.alert("Error", "Could not save product");
-    } finally {
-      setLoading(false);
+    if (selectedImage?.uri) {
+      const fileType = selectedImage.uri.split(".").pop();
+      formData.append("image", {
+        uri: selectedImage.uri,
+        name: `photo.${fileType}`,
+        type: `image/${fileType}`,
+      } as any);
     }
-  };
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    };
+
+    if (editId) {
+      await axios.put(
+        `http://localhost:5000/api/products/${editId}`,
+        formData,
+        config
+      );
+    } else {
+      await axios.post(
+        "http://localhost:5000/api/products",
+        formData,
+        config
+      );
+    }
+
+    setModalVisible(false);
+    setSelectedImage(null);
+    fetchProducts();
+  } catch (err: any) {
+    console.log(err.response?.data);
+    Alert.alert(
+      "Error",
+      err.response?.data?.message || "Could not save product"
+    );
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const confirmDelete = (id: number) => {
     setDeleteId(id);

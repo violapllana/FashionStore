@@ -17,6 +17,7 @@ const cartRoutes = require("./routes/cartRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const contactRoutes = require("./routes/contactRoutes");
+const adminDashboard = require("./routes/adminDashboard");
 
 const app = express();
 app.use(cors());
@@ -33,6 +34,8 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/admin/dashboard",adminDashboard);
+
 
 
 
