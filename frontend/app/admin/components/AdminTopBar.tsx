@@ -19,23 +19,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 20,
+    backgroundColor: '#fff', // <- shto këtë për të bërë të bardhë
+    padding: 15,
+    borderRadius: 10,
   },
   hello: {
     fontSize: 20,
     fontWeight: '600',
-  },
-  searchBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#f4f4f4',
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    width: 250,
+    color: '#111', // mbaj të zi për tekst
   },
   email: {
-  fontSize: 14,
-  color: '#777',
-}
-
+    fontSize: 14,
+    color: '#555',
+  },
 });

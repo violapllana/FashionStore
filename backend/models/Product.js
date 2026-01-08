@@ -13,10 +13,8 @@ const Product = sequelize.define(
     price: { type: DataTypes.FLOAT, allowNull: false },
 
     category: { type: DataTypes.STRING }, 
-    // Clothing / Footwear / Accessories
 
     subcategory: { type: DataTypes.STRING }, 
-    // Tops / Jackets / Pants ...
 
     gender: {
       type: DataTypes.ENUM("Men", "Women", "Kids"),
@@ -31,5 +29,18 @@ const Product = sequelize.define(
   },
   { timestamps: true }
 );
+
+
+Product.addHook("afterFind", (products) => {
+  if (Array.isArray(products)) {
+    products.forEach((product) => {
+      if (product.image) {
+        product.image = `http://localhost:5000/uploads/${product.image}`;
+      }
+    });
+  } else if (products && products.image) {
+    products.image = `http://localhost:5000/uploads/${products.image}`;
+  }
+});
 
 module.exports = Product;

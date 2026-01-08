@@ -1,462 +1,259 @@
+import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ScrollView,
-  Modal,
-  StyleSheet,
-  Alert,
-  Image,
+  View, Text, TextInput, Pressable, Image, ScrollView, StyleSheet, Alert, Modal, Platform
 } from "react-native";
-import { useEffect, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-import { useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
+import axios from "axios";
 
-const API_URL = "http://localhost:5000/api";
+const API_URL = "http://localhost:5000/api/products";
 
-interface Product {
-  id: number;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  sizes: string[];
-  colors: string[];
-  image?: string;
-}
-
-interface ProductForm {
-  name: string;
-  description: string;
-  price: string;
-  category: string;
-  sizes: string;
-  colors: string;
-}
+const CATEGORIES = ["Clothing","Shoes","Accessories","Bags"];
+const SUBCATEGORIES = ["Tops","Jackets","Pants","Dresses"];
+const GENDERS = ["Men","Women","Kids"];
+const CLOTHING_SIZES = ["XS","S","M","L","XL","XXL"];
+const SHOE_SIZES = ["36","37","38","39","40","41","42","43","44","45"];
+const COLORS = ["Black","White","Red","Blue","Green"];
 
 export default function ManageProducts() {
-  const router = useRouter();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
-  const [form, setForm] = useState<ProductForm>({
-    name: "",
-    description: "",
-    price: "",
-    category: "",
-    sizes: "",
-    colors: "",
-  });
-  const [editId, setEditId] = useState<number | null>(null);
-  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-  const [selectedImage, setSelectedImage] = useState<any>(null);
+  const [products, setProducts] = useState<any[]>([]);
+  const [modal, setModal] = useState<"add" | "edit" | "details" | "delete" | null>(null);
+  const [current, setCurrent] = useState<any>(null);
+  const [image, setImage] = useState<any>(null);
 
-  useEffect(() => {
-    const checkAdmin = async () => {
-      const role = await AsyncStorage.getItem("role");
-      if (role !== "admin") router.replace("/");
-      else fetchProducts();
-    };
-    checkAdmin();
-  }, []);
+  const [form, setForm] = useState({
+    name: "", description: "", price: "", category:"Clothing",
+    subcategory:"", gender:"Men", sizes: [] as string[], colors: [] as string[]
+  });
+
+  useEffect(() => { fetchProducts(); }, []);
 
   const fetchProducts = async () => {
     try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      const res = await axios.get("http://localhost:5000/api/products", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setProducts(res.data.products || res.data);
-    } catch (err) {
-      Alert.alert("Error", "Cannot fetch products");
-    } finally {
-      setLoading(false);
-    }
+      const res = await axios.get(API_URL);
+      setProducts(res.data);
+    } catch (err) { console.log(err); }
+  };
+
+  const reset = () => {
+    setForm({ name:"", description:"", price:"", category:"Clothing", subcategory:"", gender:"Men", sizes:[], colors:[] });
+    setImage(null);
+    setCurrent(null);
   };
 
   const pickImage = async () => {
-    const permissionResult =
-      await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permissionResult.granted) {
-      Alert.alert(
-        "Permission required",
-        "Permission to access gallery is required!"
-      );
-      return;
-    }
-  const result = await ImagePicker.launchImageLibraryAsync({
-  mediaTypes: ImagePicker.MediaTypeOptions.Images,
-  quality: 0.7,
-});
-
-
-    if (!result.canceled) setSelectedImage(result.assets[0]);
-  };
-
-  const openForm = (product?: Product) => {
-    if (product) {
-      setForm({
-        name: product.name,
-        description: product.description,
-        price: product.price.toString(),
-        category: product.category,
-        sizes: product.sizes?.join(",") || "",
-        colors: product.colors?.join(",") || "",
+    if (Platform.OS !== "web") {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaType.Images,
+        allowsEditing: true,
+        quality: 0.8,
       });
-      setEditId(product.id);
-      if (product.image) setSelectedImage({ uri: product.image });
-      else setSelectedImage(null);
-    } else {
-      setForm({
-        name: "",
-        description: "",
-        price: "",
-        category: "",
-        sizes: "",
-        colors: "",
-      });
-      setEditId(null);
-      setSelectedImage(null);
+      if (!result.canceled) setImage(result.assets[0].uri);
     }
-    setModalVisible(true);
   };
 
-const handleSubmit = async () => {
-  try {
-    setLoading(true);
-    const token = await AsyncStorage.getItem("token");
-
-    const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("description", form.description);
-    formData.append("price", form.price);
-    formData.append("category", form.category);
-
-    formData.append(
-      "sizes",
-      JSON.stringify(
-        form.sizes
-          .split(",")
-          .map((s) => s.trim())
-          .filter(Boolean)
-      )
-    );
-
-    formData.append(
-      "colors",
-      JSON.stringify(
-        form.colors
-          .split(",")
-          .map((c) => c.trim())
-          .filter(Boolean)
-      )
-    );
-
-    if (selectedImage?.uri) {
-      const fileType = selectedImage.uri.split(".").pop();
-      formData.append("image", {
-        uri: selectedImage.uri,
-        name: `photo.${fileType}`,
-        type: `image/${fileType}`,
-      } as any);
-    }
-
-    const config = {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    };
-
-    if (editId) {
-      await axios.put(
-        `http://localhost:5000/api/products/${editId}`,
-        formData,
-        config
-      );
-    } else {
-      await axios.post(
-        "http://localhost:5000/api/products",
-        formData,
-        config
-      );
-    }
-
-    setModalVisible(false);
-    setSelectedImage(null);
-    fetchProducts();
-  } catch (err: any) {
-    console.log(err.response?.data);
-    Alert.alert(
-      "Error",
-      err.response?.data?.message || "Could not save product"
-    );
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  const confirmDelete = (id: number) => {
-    setDeleteId(id);
-    setDeleteModalVisible(true);
+  const toggleArray = (key: "sizes"|"colors", value:string) => {
+    setForm(f => ({
+      ...f,
+      [key]: f[key].includes(value) ? f[key].filter(v=>v!==value) : [...f[key], value]
+    }));
   };
 
-  const handleDelete = async () => {
-    if (!deleteId) return;
+  const submit = async () => {
+    if(!form.name || !form.price) return Alert.alert("Error","Name & Price required");
+
+    const data = new FormData();
+    Object.entries(form).forEach(([k,v]) => data.append(k, Array.isArray(v)?JSON.stringify(v):v as string));
+
+    if(image){
+      if(Platform.OS==="web") data.append("image", image);
+      else{
+        const filename = image.split("/").pop();
+        const ext = filename?.split(".").pop();
+        data.append("image", { uri:image, name: filename||"product.jpg", type:`image/${ext==="jpg"?"jpeg":ext}` } as any);
+      }
+    }
+
     try {
-      const token = await AsyncStorage.getItem("token");
-      await axios.delete(`http://localhost:5000/api/products/${deleteId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setDeleteModalVisible(false);
+      if(modal==="add") await axios.post(API_URL, data, { headers:{ "Content-Type":"multipart/form-data" } });
+      else if(modal==="edit" && current) await axios.put(`${API_URL}/${current.id}`, data, { headers:{ "Content-Type":"multipart/form-data" } });
+
+      Alert.alert("✅ Success", modal==="add"?"Product added":"Product updated");
+      setModal(null);
+      reset();
       fetchProducts();
-    } catch (err) {
-      Alert.alert("Error", "Could not delete product");
+    } catch(err:any){ console.log(err.response?.data||err.message); Alert.alert("❌ Error","Action failed"); }
+  };
+
+  const deleteProduct = async () => {
+    if(!current) return;
+    try{
+      await axios.delete(`${API_URL}/${current.id}`);
+      Alert.alert("🗑 Deleted","Product removed");
+      setModal(null);
+      fetchProducts();
+    } catch(err){ console.log(err); }
+  };
+
+  const openEditModal = (p?: any) => {
+    if(p){
+      setCurrent(p);
+      setForm({...p, sizes:p.sizes||[], colors:p.colors||[]});
+      setImage(p.image||null);
+      setModal("edit");
+    } else {
+      reset();
+      setModal("add");
     }
   };
+
+  const openDetailsModal = (p: any) => {
+    setCurrent(p);
+    setForm({...p, sizes:p.sizes||[], colors:p.colors||[]});
+    setModal("details");
+  };
+
+  const openDeleteModal = (p: any) => {
+    setCurrent(p);
+    setModal("delete");
+  };
+
+  const sizeOptions = form.category==="Shoes"?SHOE_SIZES:CLOTHING_SIZES;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Manage Products</Text>
-      <Pressable style={styles.createBtn} onPress={() => openForm()}>
-        <Text style={styles.createText}>Add Product</Text>
+    <ScrollView style={styles.container}>
+      <Text style={styles.title}>Products</Text>
+
+      <Pressable style={styles.addBtn} onPress={()=>openEditModal()}>
+        <Text style={styles.addText}>+ Add Product</Text>
       </Pressable>
 
-      <ScrollView style={{ maxHeight: 400 }}>
-        {loading ? (
-          <Text style={{ padding: 20 }}>Loading...</Text>
-        ) : products.length === 0 ? (
-          <Text style={{ padding: 20 }}>No products found</Text>
-        ) : (
-          products.map((p) => (
-            <View key={p.id} style={styles.row}>
-              {p.image && (
-                <Image
-  source={{
-    uri: p.image.startsWith("http")
-      ? p.image
-      : `${API_URL}/uploads/${p.image}`,
-  }}
-  style={{
-    width: 50,
-    height: 50,
-    borderRadius: 8,
-    marginRight: 10,
-  }}
-/>
+      {products.map(p=>(
+        <View key={p.id} style={styles.card}>
+          <Image source={{uri:p.image}} style={styles.img}/>
+          <View style={{flex:1}}>
+            <Text style={styles.name}>{p.name}</Text>
+            <Text>${p.price}</Text>
+          </View>
+          <Pressable onPress={()=>openDetailsModal(p)}><Text style={styles.link}>Details</Text></Pressable>
+          <Pressable onPress={()=>openEditModal(p)}><Text style={styles.link}>Edit</Text></Pressable>
+          <Pressable onPress={()=>openDeleteModal(p)}><Text style={[styles.link,{color:"#ef4444"}]}>Delete</Text></Pressable>
+        </View>
+      ))}
 
-              )}
-              <Text style={styles.cell}>{p.name}</Text>
-              <Text style={styles.cell}>{p.category}</Text>
-              <Text style={styles.cell}>${p.price}</Text>
-              <View style={[styles.cell, styles.actionsCol]}>
-                <Pressable style={styles.editBtn} onPress={() => openForm(p)}>
-                  <Text style={styles.btnText}>Edit</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.deleteBtn}
-                  onPress={() => confirmDelete(p.id)}
-                >
-                  <Text style={styles.btnText}>Delete</Text>
-                </Pressable>
-              </View>
-            </View>
-          ))
-        )}
-      </ScrollView>
+      {/* Add/Edit Modal */}
+      <Modal visible={modal==="add" || modal==="edit"} transparent animationType="slide">
+        <View style={styles.overlay}>
+          <ScrollView style={styles.modal}>
+            <Text style={styles.modalTitle}>{modal==="add"?"Add":"Edit"} Product</Text>
 
-      {/* Form modal */}
-      <Modal visible={modalVisible} animationType="slide" transparent={true}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              {editId ? "Edit Product" : "Add Product"}
-            </Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Name"
-              value={form.name}
-              onChangeText={(text) => setForm({ ...form, name: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Description"
-              value={form.description}
-              onChangeText={(text) => setForm({ ...form, description: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Price"
-              value={form.price}
-              keyboardType="numeric"
-              onChangeText={(text) => setForm({ ...form, price: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Category"
-              value={form.category}
-              onChangeText={(text) => setForm({ ...form, category: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Sizes (comma separated)"
-              value={form.sizes}
-              onChangeText={(text) => setForm({ ...form, sizes: text })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Colors (comma separated)"
-              value={form.colors}
-              onChangeText={(text) => setForm({ ...form, colors: text })}
-            />
+            <TextInput style={styles.input} placeholder="Name" value={form.name} onChangeText={t=>setForm({...form,name:t})}/>
+            <TextInput style={styles.input} placeholder="Description" value={form.description} onChangeText={t=>setForm({...form,description:t})}/>
+            <TextInput style={styles.input} placeholder="Price" keyboardType="numeric" value={form.price} onChangeText={t=>setForm({...form,price:t})}/>
 
-            <Pressable
-              style={[styles.btn, { marginBottom: 15 }]}
-              onPress={pickImage}
-            >
-              <Text style={styles.btnText}>
-                {selectedImage ? "Change Image" : "Select Image"}
-              </Text>
-            </Pressable>
-            {selectedImage && (
-              <Image
-                source={{ uri: selectedImage.uri }}
-                style={{
-                  width: 100,
-                  height: 100,
-                  borderRadius: 8,
-                  marginBottom: 15,
-                }}
-              />
+            <Text style={styles.label}>Category</Text>
+            <View style={styles.wrap}>{CATEGORIES.map(c=>
+              <Pressable key={c} onPress={()=>setForm({...form,category:c})} style={[styles.tag, form.category===c && styles.active]}><Text>{c}</Text></Pressable>
+            )}</View>
+
+            <Text style={styles.label}>Subcategory</Text>
+            <View style={styles.wrap}>{SUBCATEGORIES.map(sc=>
+              <Pressable key={sc} onPress={()=>setForm({...form,subcategory:sc})} style={[styles.tag, form.subcategory===sc && styles.active]}><Text>{sc}</Text></Pressable>
+            )}</View>
+
+            <Text style={styles.label}>Gender</Text>
+            <View style={styles.wrap}>{GENDERS.map(g=>
+              <Pressable key={g} onPress={()=>setForm({...form,gender:g})} style={[styles.tag, form.gender===g && styles.active]}><Text>{g}</Text></Pressable>
+            )}</View>
+
+            {Platform.OS==="web" ? (
+              <input type="file" accept="image/*" style={{marginBottom:10}} onChange={(e:any)=>{const file=e.target.files[0]; if(file) setImage(file)}}/>
+            ):(
+              <Pressable style={styles.imageBox} onPress={pickImage}>
+                {image || current?.image ? <Image source={{uri:image||current.image}} style={styles.imgBig}/> : <Text>Select Image</Text>}
+              </Pressable>
             )}
 
-            <Pressable style={styles.btn} onPress={handleSubmit}>
-              <Text style={styles.btnText}>{editId ? "Update" : "Add"}</Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.btn,
-                { backgroundColor: "#6c757d", marginTop: 10 },
-              ]}
-              onPress={() => setModalVisible(false)}
-            >
-              <Text style={styles.btnText}>Cancel</Text>
-            </Pressable>
-          </View>
+            <Text style={styles.label}>Sizes</Text>
+            <View style={styles.wrap}>{sizeOptions.map(s=>
+              <Pressable key={s} onPress={()=>toggleArray("sizes",s)} style={[styles.tag, form.sizes.includes(s) && styles.active]}><Text>{s}</Text></Pressable>
+            )}</View>
+
+            <Text style={styles.label}>Colors</Text>
+            <View style={styles.wrap}>{COLORS.map(c=>
+              <Pressable key={c} onPress={()=>toggleArray("colors",c)} style={[styles.tag, form.colors.includes(c) && styles.active]}><Text>{c}</Text></Pressable>
+            )}</View>
+
+            <Pressable style={styles.saveBtn} onPress={submit}><Text style={{color:"#fff"}}>Save</Text></Pressable>
+            <Pressable onPress={()=>setModal(null)}><Text style={styles.cancel}>Cancel</Text></Pressable>
+          </ScrollView>
         </View>
       </Modal>
 
-      {/* Delete modal */}
-      <Modal
-        visible={deleteModalVisible}
-        animationType="fade"
-        transparent={true}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>
-              Are you sure you want to delete this product?
-            </Text>
-            <View
-              style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                marginTop: 20,
-              }}
-            >
-              <Pressable
-                style={[
-                  styles.btn,
-                  { backgroundColor: "#dc3545", flex: 1, marginRight: 10 },
-                ]}
-                onPress={handleDelete}
-              >
-                <Text style={styles.btnText}>Yes</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.btn, { backgroundColor: "#6c757d", flex: 1 }]}
-                onPress={() => setDeleteModalVisible(false)}
-              >
-                <Text style={styles.btnText}>No</Text>
-              </Pressable>
-            </View>
+    <Modal visible={modal==="details"} transparent>
+  <View style={styles.overlay}>
+    <View style={styles.modal}>
+      <Image source={{uri:current?.image}} style={styles.imgBig}/>
+      <Text style={styles.name}>{current?.name}</Text>
+      <Text>{current?.description}</Text>
+      <Text>${current?.price}</Text>
+      <Text>Category: {current?.category}</Text>
+      <Text>Subcategory: {current?.subcategory}</Text>
+      <Text>Gender: {current?.gender}</Text>
+
+      {/* Parse sizes/colors if they are strings */}
+      <Text>
+        Sizes: {Array.isArray(current?.sizes) 
+                  ? current.sizes.join(", ") 
+                  : (current?.sizes ? JSON.parse(current.sizes).join(", ") : "")}
+      </Text>
+      <Text>
+        Colors: {Array.isArray(current?.colors) 
+                  ? current.colors.join(", ") 
+                  : (current?.colors ? JSON.parse(current.colors).join(", ") : "")}
+      </Text>
+
+      <Pressable onPress={()=>setModal(null)}>
+        <Text style={styles.cancel}>Close</Text>
+      </Pressable>
+    </View>
+  </View>
+</Modal>
+
+
+      {/* Delete Modal */}
+      <Modal visible={modal==="delete"} transparent>
+        <View style={styles.overlay}>
+          <View style={styles.modal}>
+            <Text>Are you sure you want to delete?</Text>
+            <Pressable style={styles.deleteBtn} onPress={deleteProduct}><Text style={{color:"#fff"}}>Yes, Delete</Text></Pressable>
+            <Pressable onPress={()=>setModal(null)}><Text style={styles.cancel}>Cancel</Text></Pressable>
           </View>
         </View>
       </Modal>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: "#121212" },
-  title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: "#00d1b2",
-    marginBottom: 20,
-  },
-  createBtn: {
-    backgroundColor: "#00d1b2",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignSelf: "flex-start",
-    marginBottom: 25,
-  },
-  createText: { color: "#121212", fontSize: 16, fontWeight: "700" },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#333",
-  },
-  cell: { flex: 1, fontSize: 15, color: "#fff" },
-  actionsCol: { flexDirection: "row", justifyContent: "flex-end", gap: 10 },
-  editBtn: {
-    backgroundColor: "#0066ff",
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-  },
-  deleteBtn: {
-    backgroundColor: "#ff3860",
-    paddingVertical: 8,
-    paddingHorizontal: 18,
-    borderRadius: 8,
-  },
-  btnText: { color: "#fff", fontWeight: "700", textAlign: "center" },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.8)",
-    justifyContent: "center",
-    padding: 20,
-  },
-  modalContent: { backgroundColor: "#1e1e1e", borderRadius: 12, padding: 20 },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    marginBottom: 20,
-    color: "#00d1b2",
-  },
-  input: {
-    backgroundColor: "#272727",
-    color: "#fff",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    marginBottom: 15,
-  },
-  btn: {
-    backgroundColor: "#00d1b2",
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: "center",
-  },
+  container:{ flex:1, backgroundColor:"#F2F6FF", padding:16 },
+  title:{ fontSize:28, fontWeight:"700", marginBottom:16 },
+  addBtn:{ backgroundColor:"#6C9EFF", padding:14, borderRadius:14, marginBottom:16 },
+  addText:{ color:"#fff", textAlign:"center", fontWeight:"700" },
+  card:{ flexDirection:"row", alignItems:"center", backgroundColor:"#fff", padding:12, borderRadius:14, marginBottom:10 },
+  img:{ width:60, height:60, borderRadius:10, marginRight:10 },
+  imgBig:{ width:200, height:200, borderRadius:14, marginBottom:10 },
+  name:{ fontWeight:"700", fontSize:16 },
+  link:{ marginHorizontal:6, color:"#2563eb" },
+  overlay:{ flex:1, backgroundColor:"rgba(0,0,0,0.6)", justifyContent:"center", alignItems:"center" },
+  modal:{ backgroundColor:"#fff", padding:20, borderRadius:16, width:"90%" },
+  modalTitle:{ fontSize:20, fontWeight:"700", marginBottom:10 },
+  input:{ borderWidth:1, borderColor:"#E2E8F0", padding:12, borderRadius:12, marginBottom:10 },
+  imageBox:{ height:180, justifyContent:"center", alignItems:"center", borderWidth:1, borderRadius:14, marginBottom:12 },
+  saveBtn:{ backgroundColor:"#6C9EFF", padding:14, borderRadius:12, marginTop:10 },
+  deleteBtn:{ backgroundColor:"#ef4444", padding:14, borderRadius:12, marginTop:10 },
+  cancel:{ marginTop:10, textAlign:"center", color:"#64748b" },
+  label:{ fontWeight:"600", marginBottom:6 },
+  tag:{ paddingVertical:6, paddingHorizontal:12, borderRadius:12, backgroundColor:"#eee", marginRight:6, marginBottom:6 },
+  active:{ backgroundColor:"#6C9EFF", color:"#fff" },
+  wrap:{ flexDirection:"row", flexWrap:"wrap", marginBottom:12 }
 });

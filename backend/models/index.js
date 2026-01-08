@@ -22,14 +22,7 @@ CartItem.belongsTo(Product);
 User.hasMany(Message);
 Message.belongsTo(User);
 
-// // Orders
-// User.hasMany(Order);
-// Order.belongsTo(User);
 
-// // Vetëm një herë "items" alias
-// Order.hasMany(OrderItem, { as: "items" });
-// OrderItem.belongsTo(Order);
-// OrderItem.belongsTo(Product);
 
 module.exports = {
   sequelize,
