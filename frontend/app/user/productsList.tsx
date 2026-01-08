@@ -13,6 +13,7 @@ import Header from "../header";
 import Footer from "../footer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import { useShop } from "../hooks/useShop";
 
 interface Product {
   id: number;
@@ -40,9 +41,14 @@ const DATA = {
 
 export default function ProductsPage() {
   const router = useRouter();
+
+  const { cart, favorites, orders, addToCart, addToFavorites } = useShop();
+
   const [products, setProducts] = useState<Product[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [ordersModalVisible, setOrdersModalVisible] = useState(false);
 
   const [filters, setFilters] = useState<any>({
     CATEGORY: null,
@@ -60,14 +66,16 @@ export default function ProductsPage() {
 
   useEffect(() => {
     AsyncStorage.getItem("role").then(setRole);
-    axios.get(`${API_URL}/products`).then(r => setProducts(r.data || []));
+    axios.get(`${API_URL}/products`).then((r) => setProducts(r.data || []));
   }, []);
 
   const list = products
-    .filter(p => {
-      if (!p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+    .filter((p) => {
+      if (!p.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        return false;
       if (filters.CATEGORY && p.category !== filters.CATEGORY) return false;
-      if (filters.SUBCATEGORY && p.subcategory !== filters.SUBCATEGORY) return false;
+      if (filters.SUBCATEGORY && p.subcategory !== filters.SUBCATEGORY)
+        return false;
       if (filters.GENDER && p.gender !== filters.GENDER) return false;
       if (filters.COLOR && !p.colors?.includes(filters.COLOR)) return false;
       if (filters.SIZE && !p.sizes?.includes(filters.SIZE)) return false;
@@ -91,18 +99,6 @@ export default function ProductsPage() {
   const pill = (key: keyof typeof DATA | "SIZE", label: string) => {
     const value = filters[key];
 
-    const getOptions = () => {
-  if (!open) return [];
-
-  if (open === "SIZE") {
-    return filters.CATEGORY === "Shoes"
-      ? DATA.SIZE_SHOE
-      : DATA.SIZE_CLOTH;
-  }
-
-  return DATA[open as keyof typeof DATA] ?? [];
-};
-
     return (
       <Pressable
         style={[styles.pill, value && styles.pillActive]}
@@ -112,9 +108,7 @@ export default function ProductsPage() {
           {value ? `${label}: ${value}` : label}
         </Text>
         {value && (
-          <Pressable
-            onPress={() => setFilters({ ...filters, [key]: null })}
-          >
+          <Pressable onPress={() => setFilters({ ...filters, [key]: null })}>
             <Text style={{ marginLeft: 6 }}>✕</Text>
           </Pressable>
         )}
@@ -122,25 +116,32 @@ export default function ProductsPage() {
     );
   };
 
+  function getOptions() {
+    if (!open) return [];
 
-function getOptions() {
-  if (!open) return [];
+    if (open === "SIZE") {
+      return filters.CATEGORY === "Shoes" ? DATA.SIZE_SHOE : DATA.SIZE_CLOTH;
+    }
 
-  if (open === "SIZE") {
-    return filters.CATEGORY === "Shoes" ? DATA.SIZE_SHOE : DATA.SIZE_CLOTH;
+    return DATA[open as keyof typeof DATA] ?? [];
   }
-
-  return DATA[open as keyof typeof DATA] ?? [];
-}
-
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
       <Header
-        title={<Text style={{ color: "#fff", fontSize: 20 }}>FashionStore</Text>}
+        title={
+          <Text style={{ color: "#fff", fontSize: 20 }}>FashionStore</Text>
+        }
         role={role}
         searchQuery={searchQuery}
         setSearchQuery={setSearchQuery}
+        cartCount={cart.length}
+        favoritesCount={favorites.length}
+        ordersCount={orders.length}
+        onMenuPress={() => setSidebarOpen(true)}
+        onCartPress={() => setSidebarOpen(true)}
+        onFavoritesPress={() => setSidebarOpen(true)}
+        onOrdersPress={() => setOrdersModalVisible(true)}
       />
 
       <ScrollView>
@@ -154,30 +155,40 @@ function getOptions() {
           {pill("SORT", "Sort")}
         </View>
 
-     <Modal transparent visible={!!open} animationType="fade">
-  <Pressable style={styles.overlay} onPress={() => setOpen(null)}>
-    <View style={styles.sheet}>
-      {getOptions().map((item: string) => (
-        <Pressable
-          key={item}
-          style={styles.option}
-          onPress={() => {
-            setFilters({ ...filters, [open as string]: item });
-            setOpen(null);
-          }}
-        >
-          <Text>{item}</Text>
-        </Pressable>
-      ))}
-    </View>
-  </Pressable>
-</Modal>
-
+        <Modal transparent visible={!!open} animationType="fade">
+          <Pressable style={styles.overlay} onPress={() => setOpen(null)}>
+            <View style={styles.sheet}>
+              {getOptions().map((item: string) => (
+                <Pressable
+                  key={item}
+                  style={styles.option}
+                  onPress={() => {
+                    setFilters({ ...filters, [open as string]: item });
+                    setOpen(null);
+                  }}
+                >
+                  <Text>{item}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </Pressable>
+        </Modal>
 
         <Text style={styles.title}>All Products</Text>
 
         <View style={styles.grid}>
-          {list.map(p => <ProductCard key={p.id} product={p} />)}
+          {/* {list.map(p => < key={p.id} product={p} />)} */}
+
+          <View style={styles.grid}>
+            {list.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                addToCart={addToCart}
+                addToFavorites={addToFavorites}
+              />
+            ))}
+          </View>
         </View>
 
         <Footer />

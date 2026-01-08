@@ -4,6 +4,7 @@ import {
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
+import AdminLayout from "./components/AdminLayout";
 
 const API_URL = "http://localhost:5000/api/products";
 
@@ -120,6 +121,7 @@ export default function ManageProducts() {
   const sizeOptions = form.category==="Shoes"?SHOE_SIZES:CLOTHING_SIZES;
 
   return (
+    <AdminLayout >
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Products</Text>
 
@@ -231,6 +233,7 @@ export default function ManageProducts() {
         </View>
       </Modal>
     </ScrollView>
+    </AdminLayout>
   );
 }
 

@@ -17,6 +17,7 @@ export default function AdminSidebar() {
       <Text style={styles.logo}>FashionStore</Text>
 
       {/* MENU */}
+      <SidebarItem icon="home" label="Home" route="/" />
       <SidebarItem icon="dashboard" label="Dashboard" route="/admin/dashboard" active />
       <SidebarItem icon="people" label="Customers" route="/admin/users" />
       <SidebarItem icon="inventory" label="Products" route="/admin/products" />

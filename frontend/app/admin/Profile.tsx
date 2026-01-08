@@ -11,7 +11,8 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import Footer from "../footer";
+
+import AdminLayout from "./components/AdminLayout";
 
 const API_URL = "http://localhost:5000/api/auth/profile";
 
@@ -96,20 +97,9 @@ export default function ProfileScreen() {
   if (!user) return <Text style={{ color: "#000", margin: 20 }}>Loading...</Text>;
 
   return (
+    <AdminLayout>
     <ScrollView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.topBar}>
-        <Pressable onPress={() => router.push("/admin/dashboard")}>
-          <Text style={styles.title}>Dashboard</Text>
-        </Pressable>
-        <View style={styles.headerRight}>
-          {role && (
-            <Pressable onPress={handleLogout} style={styles.logoutBtn}>
-              <Text style={styles.btnText}>Logout</Text>
-            </Pressable>
-          )}
-        </View>
-      </View>
+      
 
       {/* PROFILE CARD */}
       <View style={styles.formWrapper}>
@@ -202,8 +192,9 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      <Footer />
+
     </ScrollView>
+    </AdminLayout>
   );
 }
 
