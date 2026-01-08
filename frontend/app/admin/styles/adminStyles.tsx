@@ -111,4 +111,28 @@ export const adminStyles = StyleSheet.create({
     borderRadius: 12,
     marginTop: 10,
   },
+  filterBtn: {
+    backgroundColor: "#E0E7FF",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 16,
+    alignSelf: "flex-start",
+  },
+  filterActive: {
+    backgroundColor: "#6366F1",
+    padding: 10,
+    borderRadius: 10,
+    marginBottom: 16,
+    alignSelf: "flex-start",
+  },
+  roleActive: {
+    backgroundColor: "#6366F1",
+    padding: 8,
+    borderRadius: 8,
+  },
+  roleBtn: {
+    backgroundColor: "#E0E7FF",
+    padding: 8,
+    borderRadius: 8,
+  },
 });
