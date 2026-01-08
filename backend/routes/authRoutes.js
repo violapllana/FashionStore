@@ -285,4 +285,10 @@ router.put("/profile", auth, ctrl.updateProfile);
 
 router.post("/resend-verification" , ctrl.resendVerification);
 
+router.post(
+  "/users",
+  auth, ctrl.isAdmin,ctrl.createUserByAdmin
+);
+
+
 module.exports = router;
