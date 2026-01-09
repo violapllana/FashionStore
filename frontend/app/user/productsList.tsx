@@ -10,7 +10,6 @@ import {
 import axios from "axios";
 import ProductCard from "../productCard";
 import Header from "../header";
-import Footer from "../footer";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useShop } from "../hooks/useShop";
@@ -191,7 +190,7 @@ export default function ProductsPage() {
           </View>
         </View>
 
-        <Footer />
+ 
       </ScrollView>
     </View>
   );

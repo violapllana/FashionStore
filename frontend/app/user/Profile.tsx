@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import Footer from "../footer";
+
 
 const API_URL = "http://localhost:5000/api/auth/profile";
 
@@ -284,7 +284,7 @@ export default function ProfileScreen() {
         </View>
       </Modal>
 
-      <Footer />
+
     </ScrollView>
   );
 }
