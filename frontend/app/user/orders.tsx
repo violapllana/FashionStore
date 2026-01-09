@@ -68,7 +68,7 @@ export default function MyOrders() {
   return (
     <UserLayout role={role} cart={[]} favorites={[]} orders={orders} searchQuery="" setSearchQuery={() => {}} onLogout={handleLogout} onRemoveFavorite={() => {}} onChangeQty={() => {}} onOrder={() => {}}>
       <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.pageTitle}>My Orders</Text>
+        <Text style={styles.pageTitle}>My Orders 📦</Text>
         {orders.map(order => (
           <View key={order.id} style={styles.card}>
             <View style={styles.cardHeader}>

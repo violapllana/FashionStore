@@ -155,26 +155,44 @@ export default function ProfileScreen() {
       onOrder={() => {}}
     >
       <ScrollView style={styles.container}>
-        {/* VERIFY BANNER */}
-        <View style={styles.verifyBanner}>
-          <Text style={styles.verifyText}>
-            {user?.isVerified
-              ? "Your email is verified !"
-              : "Your email is not verified ..."}
-          </Text>
+{/* VERIFY STATUS CARD */}
+<View
+  style={[
+    styles.verifyCard,
+    user?.isVerified ? styles.verified : styles.notVerified,
+  ]}
+>
+  <View style={styles.verifyLeft}>
+    <Text style={styles.verifyIcon}>
+      {user?.isVerified ? "✔" : "!"}
+    </Text>
+  </View>
 
-          {!user?.isVerified && (
-            <Pressable
-              style={styles.verifyBtn}
-              onPress={resendVerification}
-              disabled={loadingResend}
-            >
-              <Text style={styles.verifyBtnText}>
-                {loadingResend ? "Sending..." : "Resend Verification Email"}
-              </Text>
-            </Pressable>
-          )}
-        </View>
+  <View style={styles.verifyContent}>
+    <Text style={styles.verifyTitle}>
+      {user?.isVerified ? "Email Verified" : "Email Not Verified"}
+    </Text>
+
+    <Text style={styles.verifyDescription}>
+      {user?.isVerified
+        ? "Your account email has been successfully verified."
+        : "Please verify your email to unlock full account features."}
+    </Text>
+
+    {!user?.isVerified && (
+      <Pressable
+        style={styles.verifyActionBtn}
+        onPress={resendVerification}
+        disabled={loadingResend}
+      >
+        <Text style={styles.verifyActionText}>
+          {loadingResend ? "Sending..." : "Resend Verification Email"}
+        </Text>
+      </Pressable>
+    )}
+  </View>
+</View>
+
 
         {/* PROFILE CARD */}
         <View style={styles.formWrapper}>
@@ -260,22 +278,8 @@ export default function ProfileScreen() {
           </View>
         </Modal>
 
-        {/* VERIFY MODAL */}
-        <Modal visible={verifyModal} transparent animationType="fade">
-          <View style={styles.modalOverlay}>
-            <View style={[styles.modalContent, { alignItems: "center" }]}>
-              <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
-                {resendMsg}
-              </Text>
-              <Pressable
-                style={[styles.saveBtn, { width: 120 }]}
-                onPress={() => setVerifyModal(false)}
-              >
-                <Text style={styles.btnText}>OK</Text>
-              </Pressable>
-            </View>
-          </View>
-        </Modal>
+ 
+
       </ScrollView>
     </UserLayout>
   );
@@ -369,23 +373,67 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
   },
-  verifyBanner: {
-    backgroundColor: "#fffae6",
-    borderLeftWidth: 5,
-    borderLeftColor: "#ffbf00",
-    padding: 15,
-    marginHorizontal: 15,
-    marginTop: 15,
-    borderRadius: 10,
-  },
-  verifyText: { color: "#333", fontWeight: "700", fontSize: 14 },
-  verifyBtn: {
-    backgroundColor: "#ffbf00",
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginTop: 10,
-    alignItems: "center",
-  },
-  verifyBtnText: { color: "#000", fontWeight: "700" },
-  verifyMsg: { marginTop: 8, fontSize: 13, color: "green" },
+ verifyCard: {
+  flexDirection: "row",
+  alignItems: "center",
+  marginHorizontal: 15,
+  marginTop: 20,
+  padding: 20,
+  borderRadius: 14,
+  backgroundColor: "#fff",
+  shadowColor: "#000",
+  shadowOffset: { width: 0, height: 4 },
+  shadowOpacity: 0.1,
+  shadowRadius: 6,
+  elevation: 4,
+},
+verified: {
+  borderLeftWidth: 5,
+  borderLeftColor: "#2ecc71",
+},
+notVerified: {
+  borderLeftWidth: 5,
+  borderLeftColor: "#ff4d6d",
+},
+verifyLeft: {
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  justifyContent: "center",
+  alignItems: "center",
+  marginRight: 15,
+  backgroundColor: "#000",
+},
+verifyIcon: {
+  color: "#fff",
+  fontSize: 20,
+  fontWeight: "700",
+},
+verifyContent: {
+  flex: 1,
+},
+verifyTitle: {
+  fontSize: 16,
+  fontWeight: "700",
+  color: "#000",
+  marginBottom: 4,
+},
+verifyDescription: {
+  fontSize: 14,
+  color: "#555",
+  marginBottom: 12,
+},
+verifyActionBtn: {
+  backgroundColor: "#000",
+  paddingVertical: 10,
+  paddingHorizontal: 16,
+  borderRadius: 8,
+  alignSelf: "flex-start",
+},
+verifyActionText: {
+  color: "#fff",
+  fontWeight: "700",
+  fontSize: 14,
+},
+
 });

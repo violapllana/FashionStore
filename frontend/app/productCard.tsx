@@ -19,6 +19,12 @@ export default function ProductCard({ product, addToCart, addToFavorites }: any)
       <Pressable style={styles.heart} onPress={() => addToFavorites(product)}>
         <AntDesign name="heart" size={16} color="#555" />
       </Pressable>
+{/* NEW Badge */}
+{product.isNew && (
+  <View style={styles.newBadge}>
+    <Text style={styles.newText}>NEW</Text>
+  </View>
+)}
 
       {/* Image */}
       <View style={styles.imageBox}>
@@ -108,4 +114,21 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#333",
   },
+  newBadge: {
+  position: "absolute",
+  top: 8,
+  left: 8,
+  backgroundColor: "#ff3b30",
+  paddingHorizontal: 6,
+  paddingVertical: 2,
+  borderRadius: 4,
+  zIndex: 10,
+},
+
+newText: {
+  color: "#fff",
+  fontWeight: "700",
+  fontSize: 10,
+},
+
 });

@@ -1,11 +1,14 @@
-import { View, ScrollView, Modal, Pressable, Text, StyleSheet } from "react-native";
+import { View, ScrollView, Modal, Pressable, Text, StyleSheet, Alert } from "react-native";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import ProductCard from "../productCard";
 import { useShop } from "../hooks/useShop";
-import UserLayout from "./components/UserLayout"; // ✅ wrap in UserLayout
+import UserLayout from "./components/UserLayout";
+import { io } from "socket.io-client";
+import Toast from "react-native-toast-message";
+
 
 interface Product {
   id: number;
@@ -31,6 +34,10 @@ const DATA = {
   SORT: ["Lowest price", "Highest price", "A-Z", "Z-A"],
 };
 
+// Ndrysho IP sipas kompjuterit tënd
+const API_BASE = "http://localhost:5000";
+const socket = io(API_BASE);
+
 export default function ProductsPage() {
   const router = useRouter();
   const { cart, favorites, orders, addToCart, addToFavorites } = useShop();
@@ -49,9 +56,52 @@ export default function ProductsPage() {
   });
   const [open, setOpen] = useState<keyof typeof DATA | "SIZE" | null>(null);
 
+  // Merr role nga AsyncStorage dhe produktet nga backend
   useEffect(() => {
     AsyncStorage.getItem("role").then(setRole);
-    axios.get("http://localhost:5000/api/products").then((r) => setProducts(r.data || []));
+
+// Kur merr produktet nga backend
+axios.get(`${API_BASE}/api/products`)
+  .then((res) => {
+    const now = new Date();
+    const productsWithNewFlag = res.data.map((p: any) => {
+      const createdAt = new Date(p.createdAt); 
+      const isNew = (now.getTime() - createdAt.getTime()) < 24 * 60 * 60 * 1000;
+      return { ...p, isNew };
+    });
+
+
+    productsWithNewFlag.sort((a: any, b: any) => {
+      if (a.isNew && !b.isNew) return -1;
+      if (!a.isNew && b.isNew) return 1;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+    setProducts(productsWithNewFlag || []);
+  })
+  .catch((err) => console.log("Error fetching products:", err));
+
+
+// Kur vjen produkt i ri nga socket
+socket.on("newProduct", (product: Product) => {
+  Alert.alert("Produkt i ri!", `${product.name} - $${product.price}`);
+  setProducts(prev => [{ ...product, isNew: true }, ...prev]);
+
+
+
+  // Shfaq njoftimin
+  Toast.show({
+    type: "success",
+    text1: "Produkt i ri!",
+    text2: `${product.name} - $${product.price}`,
+    visibilityTime: 4000, // 4 sekonda
+  });
+});
+
+
+    return () => {
+      socket.disconnect();
+    };
   }, []);
 
   const list = products
@@ -163,6 +213,7 @@ export default function ProductsPage() {
           ))}
         </View>
       </ScrollView>
+      <Toast position="top" />
     </UserLayout>
   );
 }

@@ -40,19 +40,34 @@ export default function Home() {
 
   const API_URL = "http://localhost:5000/api";
 
-  useEffect(() => {
-    AsyncStorage.getItem("role").then(setRole);
+useEffect(() => {
+  AsyncStorage.getItem("role").then(setRole);
 
-    axios
-      .get(`${API_URL}/products`)
-      .then((res) => {
-        setProducts(res.data || []);
-        setFilteredProducts(res.data || []);
-      })
-      .catch((err) => console.log(err));
+  axios
+    .get(`${API_URL}/products`)
+    .then((res) => {
+      const now = new Date();
+      const productsWithNewFlag = res.data.map((p: any) => {
+        const createdAt = new Date(p.createdAt);
+        const isNew = now.getTime() - createdAt.getTime() < 24 * 60 * 60 * 1000;
+        return { ...p, isNew };
+      });
 
-    if (role) fetchUserData();
-  }, [role]);
+      // Sorto: produktet NEW më parë, pastaj të vjetra sipas createdAt
+      productsWithNewFlag.sort((a: any, b: any) => {
+        if (a.isNew && !b.isNew) return -1;
+        if (!a.isNew && b.isNew) return 1;
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      });
+
+      setProducts(productsWithNewFlag || []);
+      setFilteredProducts(productsWithNewFlag || []);
+    })
+    .catch((err) => console.log(err));
+
+  if (role) fetchUserData();
+}, [role]);
+
 
   const fetchUserData = async () => {
     const token = await AsyncStorage.getItem("token");

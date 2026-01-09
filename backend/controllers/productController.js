@@ -1,10 +1,44 @@
 const Product = require("../models/Product");
 
+// exports.createProduct = async (req, res) => {
+//   try {
+//     console.log("BODY:", req.body);
+//     console.log("FILE:", req.file);
+
+//     const {
+//       name,
+//       description,
+//       price,
+//       category,
+//       subcategory,
+//       gender,
+//       sizes,
+//       colors
+//     } = req.body;
+
+//     const image = req.file ? req.file.filename : "default-product.jpg";
+
+//     const product = await Product.create({
+//       name,
+//       description,
+//       price,
+//       category,
+//       subcategory,
+//       gender,
+//       sizes: sizes ? JSON.parse(sizes) : [],
+//       colors: colors ? JSON.parse(colors) : [],
+//       image
+//     });
+
+//     res.status(201).json(product);
+//   } catch (err) {
+//     console.error("Create product error:", err);
+//     res.status(500).json({ message: "Error creating product" });
+//   }
+// };
+
 exports.createProduct = async (req, res) => {
   try {
-    console.log("BODY:", req.body);
-    console.log("FILE:", req.file);
-
     const {
       name,
       description,
@@ -18,6 +52,7 @@ exports.createProduct = async (req, res) => {
 
     const image = req.file ? req.file.filename : "default-product.jpg";
 
+    // Krijo produktin normalisht
     const product = await Product.create({
       name,
       description,
@@ -30,12 +65,25 @@ exports.createProduct = async (req, res) => {
       image
     });
 
+    // Merr socket.io nga app
+    const io = req.app.get("io");
+
+    // Dërgo event të gjithë klientëve
+    io.emit("newProduct", {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+    });
+
     res.status(201).json(product);
   } catch (err) {
     console.error("Create product error:", err);
     res.status(500).json({ message: "Error creating product" });
   }
 };
+
+
 
 
 exports.getProducts = async (req, res) => {
