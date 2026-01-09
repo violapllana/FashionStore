@@ -1,17 +1,11 @@
+import { View, ScrollView, Modal, Pressable, Text, StyleSheet } from "react-native";
 import { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  ScrollView,
-  Pressable,
-  StyleSheet,
-  Modal,
-} from "react-native";
 import axios from "axios";
-import ProductCard from "../productCard";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
+import ProductCard from "../productCard";
 import { useShop } from "../hooks/useShop";
+import UserLayout from "./components/UserLayout"; // ✅ wrap in UserLayout
 
 interface Product {
   id: number;
@@ -39,15 +33,11 @@ const DATA = {
 
 export default function ProductsPage() {
   const router = useRouter();
-
   const { cart, favorites, orders, addToCart, addToFavorites } = useShop();
 
   const [products, setProducts] = useState<Product[]>([]);
   const [role, setRole] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [ordersModalVisible, setOrdersModalVisible] = useState(false);
-
   const [filters, setFilters] = useState<any>({
     CATEGORY: null,
     SUBCATEGORY: null,
@@ -57,23 +47,18 @@ export default function ProductsPage() {
     PRICE: null,
     SORT: null,
   });
-
   const [open, setOpen] = useState<keyof typeof DATA | "SIZE" | null>(null);
-
-  const API_URL = "http://localhost:5000/api";
 
   useEffect(() => {
     AsyncStorage.getItem("role").then(setRole);
-    axios.get(`${API_URL}/products`).then((r) => setProducts(r.data || []));
+    axios.get("http://localhost:5000/api/products").then((r) => setProducts(r.data || []));
   }, []);
 
   const list = products
     .filter((p) => {
-      if (!p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-        return false;
+      if (!p.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
       if (filters.CATEGORY && p.category !== filters.CATEGORY) return false;
-      if (filters.SUBCATEGORY && p.subcategory !== filters.SUBCATEGORY)
-        return false;
+      if (filters.SUBCATEGORY && p.subcategory !== filters.SUBCATEGORY) return false;
       if (filters.GENDER && p.gender !== filters.GENDER) return false;
       if (filters.COLOR && !p.colors?.includes(filters.COLOR)) return false;
       if (filters.SIZE && !p.sizes?.includes(filters.SIZE)) return false;
@@ -96,15 +81,12 @@ export default function ProductsPage() {
 
   const pill = (key: keyof typeof DATA | "SIZE", label: string) => {
     const value = filters[key];
-
     return (
       <Pressable
         style={[styles.pill, value && styles.pillActive]}
         onPress={() => setOpen(open === key ? null : key)}
       >
-        <Text style={{ fontWeight: "600" }}>
-          {value ? `${label}: ${value}` : label}
-        </Text>
+        <Text style={{ fontWeight: "600" }}>{value ? `${label}: ${value}` : label}</Text>
         {value && (
           <Pressable onPress={() => setFilters({ ...filters, [key]: null })}>
             <Text style={{ marginLeft: 6 }}>✕</Text>
@@ -116,19 +98,29 @@ export default function ProductsPage() {
 
   function getOptions() {
     if (!open) return [];
-
-    if (open === "SIZE") {
-      return filters.CATEGORY === "Shoes" ? DATA.SIZE_SHOE : DATA.SIZE_CLOTH;
-    }
-
+    if (open === "SIZE") return filters.CATEGORY === "Shoes" ? DATA.SIZE_SHOE : DATA.SIZE_CLOTH;
     return DATA[open as keyof typeof DATA] ?? [];
   }
 
-  return (
-    <View style={{ flex: 1, backgroundColor: "#fff" }}>
- 
+  const handleLogout = async () => {
+    await AsyncStorage.clear();
+    setRole(null);
+  };
 
-      <ScrollView>
+  return (
+    <UserLayout
+      role={role}
+      cart={cart}
+      favorites={favorites}
+      orders={orders}
+      searchQuery={searchQuery}
+      setSearchQuery={setSearchQuery}
+      onLogout={handleLogout}
+      onRemoveFavorite={() => {}}
+      onChangeQty={() => {}}
+      onOrder={() => {}}
+    >
+      <ScrollView style={{ flex: 1, backgroundColor: "#fff" }}>
         <View style={styles.bar}>
           {pill("CATEGORY", "Category")}
           {pill("SUBCATEGORY", "Subcategory")}
@@ -161,23 +153,17 @@ export default function ProductsPage() {
         <Text style={styles.title}>All Products</Text>
 
         <View style={styles.grid}>
-          {/* {list.map(p => < key={p.id} product={p} />)} */}
-
-          <View style={styles.grid}>
-            {list.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                addToCart={addToCart}
-                addToFavorites={addToFavorites}
-              />
-            ))}
-          </View>
+          {list.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              addToCart={addToCart}
+              addToFavorites={addToFavorites}
+            />
+          ))}
         </View>
-
- 
       </ScrollView>
-    </View>
+    </UserLayout>
   );
 }
 

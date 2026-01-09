@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from "expo-router";
-
+import UserLayout from "./components/UserLayout"; // <-- import UserLayout
 
 const API_URL = "http://localhost:5000/api/auth/profile";
 
@@ -40,10 +40,7 @@ export default function ProfileScreen() {
   const getProfile = async () => {
     try {
       const token = await AsyncStorage.getItem("token");
-      if (!token) {
-        alert("Login first");
-        return;
-      }
+      if (!token) return alert("Login first");
 
       const res = await axios.get(API_URL, {
         headers: { Authorization: `Bearer ${token}` },
@@ -142,152 +139,149 @@ export default function ProfileScreen() {
     }
   };
 
-  if (!user)
-    return <Text style={{ color: "#000", margin: 20 }}>Loading...</Text>;
+  if (!user) return <Text style={{ color: "#000", margin: 20 }}>Loading...</Text>;
 
   return (
-    <ScrollView style={styles.container}>
-      {/* HEADER */}
-      <View style={styles.topBar}>
-        <Pressable onPress={() => router.push("/")}>
-          <Text style={styles.title}>FashionStore</Text>
-        </Pressable>
-        <View style={styles.headerRight}>
-          {role && (
-            <Pressable onPress={handleLogout} style={styles.logoutBtn}>
-              <Text style={styles.btnText}>Logout</Text>
+    <UserLayout
+      role={role}
+      cart={[]}
+      favorites={[]}
+      orders={[]}
+      searchQuery=""
+      setSearchQuery={() => {}}
+      onLogout={handleLogout}
+      onRemoveFavorite={() => {}}
+      onChangeQty={() => {}}
+      onOrder={() => {}}
+    >
+      <ScrollView style={styles.container}>
+        {/* VERIFY BANNER */}
+        <View style={styles.verifyBanner}>
+          <Text style={styles.verifyText}>
+            {user?.isVerified
+              ? "Your email is verified !"
+              : "Your email is not verified ..."}
+          </Text>
+
+          {!user?.isVerified && (
+            <Pressable
+              style={styles.verifyBtn}
+              onPress={resendVerification}
+              disabled={loadingResend}
+            >
+              <Text style={styles.verifyBtnText}>
+                {loadingResend ? "Sending..." : "Resend Verification Email"}
+              </Text>
             </Pressable>
           )}
         </View>
-      </View>
 
-      <View style={styles.verifyBanner}>
-        <Text style={styles.verifyText}>
-          {user?.isVerified
-            ? "Your email is verified !"
-            : "Your email is not verified ..."}
-        </Text>
+        {/* PROFILE CARD */}
+        <View style={styles.formWrapper}>
+          <Text style={styles.pageTitle}>My Profile</Text>
+          <View style={styles.card}>
+            <Text style={styles.label}>Name</Text>
+            <Text style={styles.value}>{user.name}</Text>
 
-        {!user?.isVerified && (
-          <Pressable
-            style={styles.verifyBtn}
-            onPress={resendVerification}
-            disabled={loadingResend}
-          >
-            <Text style={styles.verifyBtnText}>
-              {loadingResend ? "Sending..." : "Resend Verification Email"}
-            </Text>
-          </Pressable>
-        )}
-      </View>
+            <Text style={styles.label}>Email</Text>
+            <Text style={styles.value}>{user.email}</Text>
 
-      {/* PROFILE CARD */}
-      <View style={styles.formWrapper}>
-        <Text style={styles.pageTitle}>My Profile</Text>
-        <View style={styles.card}>
-          <Text style={styles.label}>Name</Text>
-          <Text style={styles.value}>{user.name}</Text>
+            <Text style={styles.label}>Address Line</Text>
+            <Text style={styles.value}>{user.addressLine || "-"}</Text>
 
-          <Text style={styles.label}>Email</Text>
-          <Text style={styles.value}>{user.email}</Text>
+            <Text style={styles.label}>City</Text>
+            <Text style={styles.value}>{user.city || "-"}</Text>
 
-          <Text style={styles.label}>Address Line</Text>
-          <Text style={styles.value}>{user.addressLine || "-"}</Text>
+            <Text style={styles.label}>Postal Code</Text>
+            <Text style={styles.value}>{user.postalCode || "-"}</Text>
 
-          <Text style={styles.label}>City</Text>
-          <Text style={styles.value}>{user.city || "-"}</Text>
+            <Text style={styles.label}>Phone</Text>
+            <Text style={styles.value}>{user.phone || "-"}</Text>
 
-          <Text style={styles.label}>Postal Code</Text>
-          <Text style={styles.value}>{user.postalCode || "-"}</Text>
-
-          <Text style={styles.label}>Phone</Text>
-          <Text style={styles.value}>{user.phone || "-"}</Text>
-
-          <Pressable style={styles.editBtn} onPress={() => setEditModal(true)}>
-            <Text style={styles.btnText}>Edit Profile</Text>
-          </Pressable>
-        </View>
-      </View>
-
-      {/* EDIT MODAL */}
-      <Modal visible={editModal} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Profile</Text>
-
-            <TextInput
-              style={styles.input}
-              value={form.name}
-              onChangeText={(t) => setForm({ ...form, name: t })}
-              placeholder="Name"
-            />
-            <TextInput
-              style={styles.input}
-              value={form.email}
-              onChangeText={(t) => setForm({ ...form, email: t })}
-              placeholder="Email"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Address Line"
-              value={address.addressLine}
-              onChangeText={(t) => setAddress({ ...address, addressLine: t })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="City"
-              value={address.city}
-              onChangeText={(t) => setAddress({ ...address, city: t })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Postal Code"
-              value={address.postalCode}
-              onChangeText={(t) => setAddress({ ...address, postalCode: t })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Phone"
-              value={address.phone}
-              onChangeText={(t) => setAddress({ ...address, phone: t })}
-            />
-
-            <Pressable style={styles.saveBtn} onPress={saveProfileAndAddress}>
-              <Text style={styles.btnText}>Save</Text>
-            </Pressable>
-            <Pressable
-              style={[
-                styles.saveBtn,
-                { backgroundColor: "#888", marginTop: 10 },
-              ]}
-              onPress={() => setEditModal(false)}
-            >
-              <Text style={styles.btnText}>Cancel</Text>
+            <Pressable style={styles.editBtn} onPress={() => setEditModal(true)}>
+              <Text style={styles.btnText}>Edit Profile</Text>
             </Pressable>
           </View>
         </View>
-      </Modal>
 
-      <Modal visible={verifyModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, { alignItems: "center" }]}>
-            <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
-              {resendMsg}
-            </Text>
-            <Pressable
-              style={[styles.saveBtn, { width: 120 }]}
-              onPress={() => setVerifyModal(false)}
-            >
-              <Text style={styles.btnText}>OK</Text>
-            </Pressable>
+        {/* EDIT MODAL */}
+        <Modal visible={editModal} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+
+              <TextInput
+                style={styles.input}
+                value={form.name}
+                onChangeText={(t) => setForm({ ...form, name: t })}
+                placeholder="Name"
+              />
+              <TextInput
+                style={styles.input}
+                value={form.email}
+                onChangeText={(t) => setForm({ ...form, email: t })}
+                placeholder="Email"
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Address Line"
+                value={address.addressLine}
+                onChangeText={(t) => setAddress({ ...address, addressLine: t })}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="City"
+                value={address.city}
+                onChangeText={(t) => setAddress({ ...address, city: t })}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Postal Code"
+                value={address.postalCode}
+                onChangeText={(t) => setAddress({ ...address, postalCode: t })}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Phone"
+                value={address.phone}
+                onChangeText={(t) => setAddress({ ...address, phone: t })}
+              />
+
+              <Pressable style={styles.saveBtn} onPress={saveProfileAndAddress}>
+                <Text style={styles.btnText}>Save</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.saveBtn, { backgroundColor: "#888", marginTop: 10 }]}
+                onPress={() => setEditModal(false)}
+              >
+                <Text style={styles.btnText}>Cancel</Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
 
-
-    </ScrollView>
+        {/* VERIFY MODAL */}
+        <Modal visible={verifyModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.modalContent, { alignItems: "center" }]}>
+              <Text style={{ fontSize: 16, fontWeight: "600", marginBottom: 12 }}>
+                {resendMsg}
+              </Text>
+              <Pressable
+                style={[styles.saveBtn, { width: 120 }]}
+                onPress={() => setVerifyModal(false)}
+              >
+                <Text style={styles.btnText}>OK</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
+      </ScrollView>
+    </UserLayout>
   );
 }
+
+
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
