@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
-import { View, Text, ScrollView, Pressable, ImageBackground, useWindowDimensions, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ImageBackground,
+  useWindowDimensions,
+  StyleSheet,
+} from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 
 import UserLayout from "./user/components/UserLayout";
 import ProductCard from "./productCard";
-
 
 interface Product {
   id: number;
@@ -36,12 +43,13 @@ export default function Home() {
   useEffect(() => {
     AsyncStorage.getItem("role").then(setRole);
 
-    axios.get(`${API_URL}/products`)
-      .then(res => {
+    axios
+      .get(`${API_URL}/products`)
+      .then((res) => {
         setProducts(res.data || []);
         setFilteredProducts(res.data || []);
       })
-      .catch(err => console.log(err));
+      .catch((err) => console.log(err));
 
     if (role) fetchUserData();
   }, [role]);
@@ -52,9 +60,15 @@ export default function Home() {
 
     try {
       const [cartRes, favRes, ordersRes] = await Promise.all([
-        axios.get(`${API_URL}/cart`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_URL}/favorites`, { headers: { Authorization: `Bearer ${token}` } }),
-        axios.get(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/cart`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/favorites`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        axios.get(`${API_URL}/orders`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
       ]);
 
       setCart(cartRes.data || []);
@@ -77,27 +91,42 @@ export default function Home() {
   // Filter products based on search
   useEffect(() => {
     if (!searchQuery) setFilteredProducts(products);
-    else setFilteredProducts(
-      products.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    else
+      setFilteredProducts(
+        products.filter((p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
   }, [searchQuery, products]);
 
   const addToCart = async (product: Product) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
     try {
-      await axios.post(`${API_URL}/cart`, { productId: product.id, quantity: 1 }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${API_URL}/cart`,
+        { productId: product.id, quantity: 1 },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       fetchUserData();
-    } catch (err) { console.log(err); }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const addToFavorites = async (product: Product) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
     try {
-      await axios.post(`${API_URL}/favorites`, { productId: product.id }, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${API_URL}/favorites`,
+        { productId: product.id },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       fetchUserData();
-    } catch (err) { console.log(err); }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const changeCartQuantity = async (item: Product, delta: number) => {
@@ -106,21 +135,35 @@ export default function Home() {
     try {
       const newQty = (item.quantity || 1) + delta;
       if (newQty <= 0) {
-        await axios.delete(`${API_URL}/cart/${item.id}`, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.delete(`${API_URL}/cart/${item.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
       } else {
-        await axios.put(`${API_URL}/cart/${item.id}`, { quantity: newQty }, { headers: { Authorization: `Bearer ${token}` } });
+        await axios.put(
+          `${API_URL}/cart/${item.id}`,
+          { quantity: newQty },
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
       }
       fetchUserData();
-    } catch (err) { console.log(err); }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const placeOrder = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
     try {
-      await axios.post(`${API_URL}/orders`, {}, { headers: { Authorization: `Bearer ${token}` } });
+      await axios.post(
+        `${API_URL}/orders`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       fetchUserData();
-    } catch (err) { console.log(err); }
+    } catch (err) {
+      console.log(err);
+    }
   };
 
   const heroHeight = width > 800 ? 500 : 420;
@@ -139,35 +182,57 @@ export default function Home() {
       setSearchQuery={setSearchQuery}
       onLogout={handleLogout}
       onRemoveFavorite={(id: any) => removeFromFavorites(id)}
-      onChangeQty={(item: Product, delta: number) => changeCartQuantity(item, delta)}
+      onChangeQty={(item: Product, delta: number) =>
+        changeCartQuantity(item, delta)
+      }
       onOrder={placeOrder}
     >
       <ScrollView>
         <ImageBackground
           source={require("../assets/fashion-trends-GettyImages-1457816153-d2982e954afe4b42bf5587f087da90d4.jpg")}
-          style={{ width: "100%", height: heroHeight, justifyContent: "center" }}
+          style={{
+            width: "100%",
+            height: heroHeight,
+            justifyContent: "center",
+          }}
         >
           <View style={styles.heroOverlay}>
-            <Text style={[styles.heroTitle, { fontSize: width > 800 ? 48 : 36 }]}>Welcome to FashionStore</Text>
-            <Text style={[styles.heroSubtitle, { fontSize: width > 800 ? 24 : 18 }]}>Discover the newest fashion trends!</Text>
+            <Text
+              style={[styles.heroTitle, { fontSize: width > 800 ? 48 : 36 }]}
+            >
+              Welcome to FashionStore
+            </Text>
+            <Text
+              style={[styles.heroSubtitle, { fontSize: width > 800 ? 24 : 18 }]}
+            >
+              Discover the newest fashion trends!
+            </Text>
           </View>
         </ImageBackground>
 
         <View style={styles.productsSection}>
           <Text style={styles.sectionTitle}>Popular Products</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.horizontalList}>
-            {filteredProducts.map(p => (
-              <ProductCard key={p.id} product={p} addToCart={addToCart} addToFavorites={addToFavorites} />
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.horizontalList}
+          >
+            {filteredProducts.map((p) => (
+              <ProductCard
+                key={p.id}
+                product={p}
+                addToCart={addToCart}
+                addToFavorites={addToFavorites}
+              />
             ))}
           </ScrollView>
         </View>
-  <Pressable 
-    style={styles.viewAllBtn} 
-    onPress={() => router.push("/user/productsList")}
-  >
-    <Text style={styles.viewAllBtnText}>View All Products</Text>
-  </Pressable>
- 
+        <Pressable
+          style={styles.viewAllBtn}
+          onPress={() => router.push("/user/productsList")}
+        >
+          <Text style={styles.viewAllBtnText}>View All Products</Text>
+        </Pressable>
       </ScrollView>
     </UserLayout>
   );
@@ -181,24 +246,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
   },
-  heroTitle: { fontWeight: "700", color: "#fff", textAlign: "center", marginBottom: 10 },
+  heroTitle: {
+    fontWeight: "700",
+    color: "#fff",
+    textAlign: "center",
+    marginBottom: 10,
+  },
   heroSubtitle: { color: "#fff", marginBottom: 20, textAlign: "center" },
-  sectionTitle: { fontWeight: "700", marginBottom: 8, color: "#111", fontSize: 18 },
+  sectionTitle: {
+    fontWeight: "700",
+    marginBottom: 8,
+    color: "#111",
+    fontSize: 18,
+  },
   productsSection: { marginTop: 30, paddingLeft: 15 },
   horizontalList: { paddingRight: 20 },
-viewAllBtn: {
-  marginTop: 10,
-  paddingVertical: 6,   // smaller vertical padding
-  paddingHorizontal: 10, // minimal horizontal padding
-  backgroundColor: "#000",
-  borderRadius: 20,      // pill-style
-  alignItems: "center",
-  alignSelf: "flex-end", // hug content width
-},
-viewAllBtnText: {
-  color: "#fff",
-  fontWeight: "600",
-  fontSize: 14,
-},
-
+  viewAllBtn: {
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: "#000",
+    borderRadius: 20,
+    alignItems: "center",
+    alignSelf: "flex-end",
+  },
+  viewAllBtnText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });

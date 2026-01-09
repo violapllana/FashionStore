@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import axios from "axios";
 import ProductCard from "../productCard";
-import Header from "../header";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import { useShop } from "../hooks/useShop";
@@ -127,21 +126,7 @@ export default function ProductsPage() {
 
   return (
     <View style={{ flex: 1, backgroundColor: "#fff" }}>
-      <Header
-        title={
-          <Text style={{ color: "#fff", fontSize: 20 }}>FashionStore</Text>
-        }
-        role={role}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        cartCount={cart.length}
-        favoritesCount={favorites.length}
-        ordersCount={orders.length}
-        onMenuPress={() => setSidebarOpen(true)}
-        onCartPress={() => setSidebarOpen(true)}
-        onFavoritesPress={() => setSidebarOpen(true)}
-        onOrdersPress={() => setOrdersModalVisible(true)}
-      />
+ 
 
       <ScrollView>
         <View style={styles.bar}>
