@@ -19,12 +19,36 @@ router.get("/stats", async (req, res) => {
       totalFavorites: 0,
     };
 
-    try { result.totalUsers = await User.count(); } catch (e) { console.error("USER:", e.message); }
-    try { result.totalOrders = await Order.count(); } catch (e) { console.error("ORDER:", e.message); }
-    try { result.totalProducts = await Product.count(); } catch (e) { console.error("PRODUCT:", e.message); }
-    try { result.totalContacts = await Contact.count(); } catch (e) { console.error("CONTACT:", e.message); }
-    try { result.totalCart = await CartItem.count(); } catch (e) { console.error("CART:", e.message); }
-    try { result.totalFavorites = await Favorite.count(); } catch (e) { console.error("FAVORITE:", e.message); }
+    try {
+      result.totalUsers = await User.count();
+    } catch (e) {
+      console.error("USER:", e.message);
+    }
+    try {
+      result.totalOrders = await Order.count();
+    } catch (e) {
+      console.error("ORDER:", e.message);
+    }
+    try {
+      result.totalProducts = await Product.count();
+    } catch (e) {
+      console.error("PRODUCT:", e.message);
+    }
+    try {
+      result.totalContacts = await Contact.count();
+    } catch (e) {
+      console.error("CONTACT:", e.message);
+    }
+    try {
+      result.totalCart = await CartItem.count();
+    } catch (e) {
+      console.error("CART:", e.message);
+    }
+    try {
+      result.totalFavorites = await Favorite.count();
+    } catch (e) {
+      console.error("FAVORITE:", e.message);
+    }
 
     res.json(result);
   } catch (err) {

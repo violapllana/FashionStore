@@ -12,9 +12,9 @@ const Product = sequelize.define(
 
     price: { type: DataTypes.FLOAT, allowNull: false },
 
-    category: { type: DataTypes.STRING }, 
+    category: { type: DataTypes.STRING },
 
-    subcategory: { type: DataTypes.STRING }, 
+    subcategory: { type: DataTypes.STRING },
 
     gender: {
       type: DataTypes.ENUM("Men", "Women", "Kids"),
@@ -29,7 +29,6 @@ const Product = sequelize.define(
   },
   { timestamps: true }
 );
-
 
 Product.addHook("afterFind", (products) => {
   if (Array.isArray(products)) {

@@ -7,7 +7,14 @@ import UserSidebar from "./UserSidebar";
 import { router } from "expo-router";
 import WeatherWidget from "./weather";
 
-export default function UserLayout({ children, role, setRole, searchQuery, setSearchQuery, onLogout }: any) {
+export default function UserLayout({
+  children,
+  role,
+  setRole,
+  searchQuery,
+  setSearchQuery,
+  onLogout,
+}: any) {
   const [cart, setCart] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -21,9 +28,15 @@ export default function UserLayout({ children, role, setRole, searchQuery, setSe
       if (!t) return;
       try {
         const [cartRes, favRes, ordersRes] = await Promise.all([
-          axios.get(`${API_URL}/cart`, { headers: { Authorization: `Bearer ${t}` } }),
-          axios.get(`${API_URL}/favorites`, { headers: { Authorization: `Bearer ${t}` } }),
-          axios.get(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${t}` } }),
+          axios.get(`${API_URL}/cart`, {
+            headers: { Authorization: `Bearer ${t}` },
+          }),
+          axios.get(`${API_URL}/favorites`, {
+            headers: { Authorization: `Bearer ${t}` },
+          }),
+          axios.get(`${API_URL}/orders`, {
+            headers: { Authorization: `Bearer ${t}` },
+          }),
         ]);
         setCart(cartRes.data || []);
         setFavorites(favRes.data || []);
@@ -70,7 +83,9 @@ export default function UserLayout({ children, role, setRole, searchQuery, setSe
               <Text style={footerStyles.heading}>Contact</Text>
               <Text style={footerStyles.text}>contact@fashionstore.com</Text>
               <Text style={footerStyles.text}>+383 38 616 161</Text>
-              <Text style={footerStyles.text}>+383 46 470 047 (Viber / WhatsApp)</Text>
+              <Text style={footerStyles.text}>
+                +383 46 470 047 (Viber / WhatsApp)
+              </Text>
               <Text style={footerStyles.text}>
                 Magjistralja Prishtinë–Ferizaj, Lapnasellë, Prishtinë, Kosovo
               </Text>
@@ -149,6 +164,10 @@ const footerStyles = StyleSheet.create({
   heading: { fontWeight: "700", fontSize: 16, marginBottom: 12, color: "#fff" },
   text: { fontSize: 14, marginBottom: 6, color: "#ccc" },
   link: { fontSize: 14, color: "#1e90ff", marginBottom: 6 },
-  copyright: { marginTop: 16, textAlign: "center", fontSize: 12, color: "#888" },
+  copyright: {
+    marginTop: 16,
+    textAlign: "center",
+    fontSize: 12,
+    color: "#888",
+  },
 });
-

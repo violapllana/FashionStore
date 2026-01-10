@@ -5,10 +5,9 @@ const { User } = require("../models");
 const {
   generateAccessToken,
   generateRefreshToken,
-  verifyRefreshToken
+  verifyRefreshToken,
 } = require("../utils/jwt");
 const { sendMail } = require("../utils/mailer");
-
 
 exports.auth = async (req, res, next) => {
   try {
@@ -24,7 +23,9 @@ exports.auth = async (req, res, next) => {
     req.user = user;
     next();
   } catch (err) {
-    return res.status(401).json({ message: "Unauthorized", error: err.message });
+    return res
+      .status(401)
+      .json({ message: "Unauthorized", error: err.message });
   }
 };
 exports.getProfile = async (req, res) => {
@@ -35,35 +36,26 @@ exports.getProfile = async (req, res) => {
       name: user.name,
       email: user.email,
       role: user.role,
-      isVerified: user.isVerified, 
-      addressLine: user.addressLine || '',
-      city: user.city || '',
-      postalCode: user.postalCode || '',
-      phone: user.phone || ''
+      isVerified: user.isVerified,
+      addressLine: user.addressLine || "",
+      city: user.city || "",
+      postalCode: user.postalCode || "",
+      phone: user.phone || "",
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-
 exports.updateProfile = async (req, res) => {
   try {
     const user = req.user;
-    const { 
-      name, 
-      email, 
-      password, 
-      addressLine, 
-      city, 
-      postalCode, 
-      phone 
-    } = req.body;
+    const { name, email, password, addressLine, city, postalCode, phone } =
+      req.body;
 
     if (name) user.name = name;
     if (email) user.email = email;
     if (password) user.password = await bcrypt.hash(password, 10);
-
 
     if (addressLine) user.addressLine = addressLine;
     if (city) user.city = city;
@@ -82,8 +74,8 @@ exports.updateProfile = async (req, res) => {
         addressLine: user.addressLine,
         city: user.city,
         postalCode: user.postalCode,
-        phone: user.phone
-      }
+        phone: user.phone,
+      },
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -97,13 +89,13 @@ exports.isAdmin = (req, res, next) => {
   next();
 };
 
-
 exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!email || !password)
-      return res.status(400).json({ message: "Email & password required" });
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "All fields are required" });
+    }
 
     const exists = await User.findOne({ where: { email } });
     if (exists)
@@ -116,31 +108,28 @@ exports.register = async (req, res) => {
       email,
       password: hashed,
       role: "user",
-      isVerified: false
+      isVerified: false,
     });
 
-
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1d"
+      expiresIn: "1d",
     });
 
     const verifyUrl = `${process.env.FRONTEND_URL}/verify?token=${token}`;
-
 
     try {
       await sendMail({
         to: user.email,
         subject: "Verify your email",
-        html: `Click <a href="${verifyUrl}">here</a> to verify your email`
+        html: `Click <a href="${verifyUrl}">here</a> to verify your email`,
       });
     } catch (emailErr) {
       console.log("Email failed:", emailErr.message);
     }
 
-
     res.status(201).json({
       message: "Registered successfully. Please verify your email.",
-      userId: user.id
+      userId: user.id,
     });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -151,28 +140,24 @@ exports.resendVerification = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email)
-      return res.status(400).json({ message: "Email required" });
+    if (!email) return res.status(400).json({ message: "Email required" });
 
     const user = await User.findOne({ where: { email } });
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.isVerified)
       return res.status(400).json({ message: "Email already verified" });
 
- 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1d"
+      expiresIn: "1d",
     });
 
     const link = `${process.env.FRONTEND_URL}/verify?token=${token}`;
-    
 
     await sendMail({
       to: user.email,
       subject: "Verify your email",
-      html: `<p>Click to verify your email:</p><a href="${link}">${link}</a>`
+      html: `<p>Click to verify your email:</p><a href="${link}">${link}</a>`,
     });
 
     res.json({ message: "Verification email sent" });
@@ -181,7 +166,6 @@ exports.resendVerification = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 exports.verifyEmail = async (req, res) => {
   try {
@@ -194,7 +178,6 @@ exports.verifyEmail = async (req, res) => {
       user.isVerified = true;
       await user.save();
     }
-
 
     res.json({
       message: "Email verified successfully",
@@ -211,7 +194,6 @@ exports.verifyEmail = async (req, res) => {
   }
 };
 
-
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -220,8 +202,7 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "Email and password required" });
 
     const user = await User.findOne({ where: { email } });
-    if (!user)
-      return res.status(404).json({ message: "User not found" });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch)
@@ -253,7 +234,6 @@ exports.login = async (req, res) => {
   }
 };
 
-
 exports.logout = async (req, res) => {
   res.json({ message: "Logged out successfully" });
 };
@@ -263,15 +243,25 @@ exports.me = async (req, res) => {
     id: req.user.id,
     name: req.user.name,
     email: req.user.email,
-    role: req.user.role
+    role: req.user.role,
   });
 };
-
 
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.findAll({
-      attributes: ["id", "name", "email", "role", "addressLine", "city", "postalCode", "phone", "isVerified", "createdAt"]
+      attributes: [
+        "id",
+        "name",
+        "email",
+        "role",
+        "addressLine",
+        "city",
+        "postalCode",
+        "phone",
+        "isVerified",
+        "createdAt",
+      ],
     });
     res.json(users);
   } catch (err) {
@@ -279,12 +269,11 @@ exports.getUsers = async (req, res) => {
   }
 };
 
-
-
 exports.updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, role, addressLine, city, postalCode, phone } = req.body;
+    const { name, email, role, addressLine, city, postalCode, phone } =
+      req.body;
 
     const user = await User.findByPk(id);
     if (!user) return res.status(404).json({ message: "User not found" });
@@ -292,7 +281,6 @@ exports.updateUser = async (req, res) => {
     user.name = name ?? user.name;
     user.email = email ?? user.email;
     user.role = role ?? user.role;
-
 
     user.addressLine = addressLine ?? user.addressLine;
     user.city = city ?? user.city;
@@ -320,7 +308,6 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-
 exports.refresh = async (req, res) => {
   try {
     const { refreshToken } = req.body;
@@ -345,25 +332,22 @@ exports.forgotPassword = async (req, res) => {
     console.log("Forgot password request:", email);
 
     const user = await User.findOne({ where: { email } });
-    if (!user)
-      return res.json({ message: "If user exists, reset email sent" });
+    if (!user) return res.json({ message: "If user exists, reset email sent" });
 
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "1h"
+      expiresIn: "1h",
     });
 
     const url = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     console.log(`Reset password URL: ${url}`);
 
-    res.json({ message: "If user exists, reset email sent", resetUrl: url }); 
+    res.json({ message: "If user exists, reset email sent", resetUrl: url });
   } catch (err) {
     console.error("Forgot password error:", err);
     res.status(500).json({ message: err.message });
   }
 };
-
-
 
 exports.resetPassword = async (req, res) => {
   try {
@@ -399,7 +383,7 @@ exports.createUserByAdmin = async (req, res) => {
       email,
       password: hashed,
       role: role || "user",
-      isVerified: true
+      isVerified: true,
     });
 
     res.status(201).json(user);

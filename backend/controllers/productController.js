@@ -47,12 +47,11 @@ exports.createProduct = async (req, res) => {
       subcategory,
       gender,
       sizes,
-      colors
+      colors,
     } = req.body;
 
     const image = req.file ? req.file.filename : "default-product.jpg";
 
-    // Krijo produktin normalisht
     const product = await Product.create({
       name,
       description,
@@ -62,13 +61,11 @@ exports.createProduct = async (req, res) => {
       gender,
       sizes: sizes ? JSON.parse(sizes) : [],
       colors: colors ? JSON.parse(colors) : [],
-      image
+      image,
     });
 
-    // Merr socket.io nga app
     const io = req.app.get("io");
 
-    // Dërgo event të gjithë klientëve
     io.emit("newProduct", {
       id: product.id,
       name: product.name,
@@ -83,9 +80,6 @@ exports.createProduct = async (req, res) => {
   }
 };
 
-
-
-
 exports.getProducts = async (req, res) => {
   try {
     const products = await Product.findAll();
@@ -94,7 +88,6 @@ exports.getProducts = async (req, res) => {
     res.status(500).json({ message: "Error fetching products" });
   }
 };
-
 
 exports.getProductById = async (req, res) => {
   try {
@@ -107,7 +100,6 @@ exports.getProductById = async (req, res) => {
     res.status(500).json({ message: "Error fetching product" });
   }
 };
-
 
 exports.updateProduct = async (req, res) => {
   try {

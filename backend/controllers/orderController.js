@@ -1,6 +1,5 @@
 const { Order, OrderItem, Product, User, CartItem } = require("../models");
 
-// GET /api/orders
 const getOrders = async (req, res) => {
   try {
     let orders;
@@ -31,10 +30,9 @@ const createOrder = async (req, res) => {
   try {
     const user = req.user;
 
-    // 🔴 kontrollo a ka adresë
     if (!user.addressLine || !user.city) {
-      return res.status(400).json({ 
-        message: "Please add delivery address in your profile" 
+      return res.status(400).json({
+        message: "Please add delivery address in your profile",
       });
     }
 
@@ -52,15 +50,16 @@ const createOrder = async (req, res) => {
       0
     );
 
-    // 🔽 ADRESA SNAPSHOT
-    const fullAddress = `${user.addressLine}, ${user.city} ${user.postalCode || ""}`;
+    const fullAddress = `${user.addressLine}, ${user.city} ${
+      user.postalCode || ""
+    }`;
 
     const order = await Order.create({
       UserId: user.id,
       totalPrice,
       deliveryAddress: fullAddress,
       paymentMethod: "CASH",
-      paymentStatus: "UNPAID"
+      paymentStatus: "UNPAID",
     });
 
     for (const item of cartItems) {
@@ -84,7 +83,6 @@ const createOrder = async (req, res) => {
   }
 };
 
-// PUT /api/orders/:orderId
 const updateOrderStatus = async (req, res) => {
   try {
     const { orderId } = req.params;
@@ -107,7 +105,6 @@ const updateOrderStatus = async (req, res) => {
   }
 };
 
-// DELETE /api/orders/:orderId
 const deleteOrder = async (req, res) => {
   try {
     const { orderId } = req.params;
