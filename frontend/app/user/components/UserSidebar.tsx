@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ScrollView } from "react-native";
+import { View, ScrollView, Pressable, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 
 interface Props {
@@ -8,8 +8,9 @@ interface Props {
   orders: any[];
   onClose: () => void;
   onRemoveFavorite: (id: number) => void;
+  onRemoveFromCart: (id: number) => void;
   onChangeQty: (item: any, delta: number) => void;
-  onOrder: () => void;
+  onOrder: (item?: any) => void;
 }
 
 export default function UserSidebar({
@@ -19,6 +20,7 @@ export default function UserSidebar({
   orders,
   onClose,
   onRemoveFavorite,
+  onRemoveFromCart,
   onChangeQty,
   onOrder,
 }: Props) {
@@ -28,57 +30,25 @@ export default function UserSidebar({
   return (
     <View style={styles.overlay}>
       <View style={styles.sidebar}>
-        {/* Close Button Top */}
         <Pressable style={styles.closeBtnTop} onPress={onClose}>
           <Text style={styles.closeText}>✕</Text>
         </Pressable>
 
         <ScrollView style={{ marginTop: 10 }}>
-          {/* LOGO */}
+          {/* Logo */}
           <Pressable onPress={() => router.push("/")}>
             <Text style={styles.logo}>FashionStore</Text>
           </Pressable>
 
-       
-
-          {/* Profile */}
-          <Pressable
-            style={styles.profileBtn}
-            onPress={() => router.push("/user/Profile")}
-          >
+          {/* Profile / Links */}
+          <Pressable style={styles.profileBtn} onPress={() => router.push("/user/Profile")}>
             <Text style={styles.profileText}>👤 My Profile</Text>
           </Pressable>
-
-          {/* Contact */}
-          <Pressable
-            style={styles.profileBtn}
-            onPress={() => router.push("/user/contact")}
-          >
+          <Pressable style={styles.profileBtn} onPress={() => router.push("/user/contact")}>
             <Text style={styles.profileText}>📩 Contact Us</Text>
           </Pressable>
-             <Pressable
-            style={styles.profileBtn}
-            onPress={() => router.push("/user/productsList")}
-          >
+          <Pressable style={styles.profileBtn} onPress={() => router.push("/user/productsList")}>
             <Text style={styles.profileText}>🛍️ Products List</Text>
-          </Pressable>
-             <Pressable
-            style={styles.profileBtn}
-            onPress={() => router.push("/user/favorite")}
-          >
-            <Text style={styles.profileText}>❤️ My Favorites</Text>
-          </Pressable>
-             <Pressable
-            style={styles.profileBtn}
-            onPress={() => router.push("/user/orders")}
-          >
-            <Text style={styles.profileText}>📦 My Orders</Text>
-          </Pressable>
-             <Pressable
-            style={styles.profileBtn}
-            onPress={() => router.push("/user/cart")}
-          >
-            <Text style={styles.profileText}>🛒 My Cart</Text>
           </Pressable>
 
           {/* Favorites */}
@@ -89,10 +59,7 @@ export default function UserSidebar({
             favorites.map((p) => (
               <View key={p.id} style={styles.cartItem}>
                 <Text style={{ flex: 1 }}>{p.Product?.name || p.name}</Text>
-                <Pressable
-                  style={styles.removeBtn}
-                  onPress={() => onRemoveFavorite(p.Product?.id || p.id)}
-                >
+                <Pressable style={styles.removeBtn} onPress={() => onRemoveFavorite(p.Product?.id || p.id)}>
                   <Text style={{ color: "#fff" }}>Remove</Text>
                 </Pressable>
               </View>
@@ -107,8 +74,12 @@ export default function UserSidebar({
             cart.map((p) => (
               <View key={p.id} style={styles.cartItem}>
                 <Text style={{ flex: 1 }}>{p.Product?.name || p.name}</Text>
+
                 <View style={styles.quantityControls}>
-                  <Pressable style={styles.qtyBtn} onPress={() => onChangeQty(p, -1)}>
+                  <Pressable
+                    style={styles.qtyBtn}
+                    onPress={() => (p.quantity <= 1 ? onRemoveFromCart(p.id) : onChangeQty(p, -1))}
+                  >
                     <Text>-</Text>
                   </Pressable>
                   <Text style={styles.qtyText}>{p.quantity}</Text>
@@ -116,12 +87,21 @@ export default function UserSidebar({
                     <Text>+</Text>
                   </Pressable>
                 </View>
+
+                <Pressable style={styles.removeBtn} onPress={() => onRemoveFromCart(p.id)}>
+                  <Text style={{ color: "#fff" }}>Remove</Text>
+                </Pressable>
+
+                <Pressable style={[styles.orderBtn, { paddingVertical: 4, paddingHorizontal: 8 }]} onPress={() => onOrder(p)}>
+                  <Text style={styles.orderText}>Order</Text>
+                </Pressable>
               </View>
             ))
           )}
+
           {cart.length > 0 && (
-            <Pressable style={styles.orderBtn} onPress={onOrder}>
-              <Text style={styles.orderText}>Place Order</Text>
+            <Pressable style={styles.orderBtn} onPress={() => onOrder()}>
+              <Text style={styles.orderText}>Place All Orders</Text>
             </Pressable>
           )}
 
@@ -148,62 +128,15 @@ export default function UserSidebar({
 }
 
 const styles = StyleSheet.create({
-  overlay: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    backgroundColor: "rgba(0,0,0,0.3)",
-    zIndex: 10,
-  },
-  sidebar: {
-    width: "60%", // më e ngushtë
-    height: "100%",
-    backgroundColor: "#fff",
-    padding: 20,
-  },
-  closeBtnTop: {
-    position: "absolute",
-    top: 15,
-    right: 15,
-    zIndex: 20,
-    backgroundColor: "#000",
-    padding: 8,
-    borderRadius: 20,
-  },
-  closeText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 16,
-    textAlign: "center",
-  },
+  overlay: { position: "absolute", width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.3)", zIndex: 10 },
+  sidebar: { width: "60%", height: "100%", backgroundColor: "#fff", padding: 20 },
+  closeBtnTop: { position: "absolute", top: 15, right: 15, zIndex: 20, backgroundColor: "#000", padding: 8, borderRadius: 20 },
+  closeText: { color: "#fff", fontWeight: "700", fontSize: 16, textAlign: "center" },
   logo: { fontSize: 22, fontWeight: "700", marginBottom: 15 },
-  topButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginVertical: 10,
-  },
-  topBtn: {
-    flex: 1,
-    marginHorizontal: 3,
-    paddingVertical: 8,
-    backgroundColor: "#000",
-    borderRadius: 8,
-  },
-  topBtnText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "700",
-  },
-  profileBtn: {
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    backgroundColor: "#f2f2f2",
-    borderRadius: 10,
-    marginBottom: 12,
-  },
+  profileBtn: { paddingVertical: 10, paddingHorizontal: 15, backgroundColor: "#f2f2f2", borderRadius: 10, marginBottom: 12 },
   profileText: { fontSize: 15, fontWeight: "700", color: "#111" },
   sidebarTitle: { fontSize: 16, fontWeight: "700", marginTop: 15, marginBottom: 5 },
-  cartItem: { flexDirection: "row", alignItems: "center", marginBottom: 8 },
+  cartItem: { flexDirection: "row", alignItems: "center", marginBottom: 8, flexWrap: "wrap" },
   quantityControls: { flexDirection: "row", alignItems: "center", marginHorizontal: 5 },
   qtyBtn: { padding: 5, backgroundColor: "#ccc", borderRadius: 5 },
   qtyText: { marginHorizontal: 5 },

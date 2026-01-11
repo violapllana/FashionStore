@@ -4,7 +4,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useRouter } from "expo-router";
 import ProductCard from "../productCard";
-import { useShop } from "../hooks/useShop";
+import { useShop } from "./components/useShop";
 import UserLayout from "./components/UserLayout";
 import { io } from "socket.io-client";
 import Toast from "react-native-toast-message";
@@ -34,13 +34,14 @@ const DATA = {
   SORT: ["Lowest price", "Highest price", "A-Z", "Z-A"],
 };
 
-// Ndrysho IP sipas kompjuterit tënd
+
 const API_BASE = "http://localhost:5000";
 const socket = io(API_BASE);
 
 export default function ProductsPage() {
   const router = useRouter();
   const { cart, favorites, orders, addToCart, addToFavorites } = useShop();
+  
 
   const [products, setProducts] = useState<Product[]>([]);
   const [role, setRole] = useState<string | null>(null);
@@ -56,48 +57,63 @@ export default function ProductsPage() {
   });
   const [open, setOpen] = useState<keyof typeof DATA | "SIZE" | null>(null);
 
-  // Merr role nga AsyncStorage dhe produktet nga backend
+
+const handleAddToCart = (product: Product) => {
+  addToCart(product);
+  Toast.show({
+    type: "success",
+    text1: "Added to Cart",
+    text2: `${product.name} has been added to your cart.`,
+    visibilityTime: 3000,
+  });
+};
+
+const handleAddToFavorites = (product: Product) => {
+  addToFavorites(product);
+  Toast.show({
+    type: "success",
+    text1: "Added to Favorites",
+    text2: `${product.name} has been added to your favorites.`,
+    visibilityTime: 3000,
+  });
+};
+
+
+
   useEffect(() => {
     AsyncStorage.getItem("role").then(setRole);
 
-// Kur merr produktet nga backend
-axios.get(`${API_BASE}/api/products`)
-  .then((res) => {
-    const now = new Date();
-    const productsWithNewFlag = res.data.map((p: any) => {
-      const createdAt = new Date(p.createdAt); 
-      const isNew = (now.getTime() - createdAt.getTime()) < 24 * 60 * 60 * 1000;
-      return { ...p, isNew };
+    axios.get(`${API_BASE}/api/products`)
+      .then((res) => {
+        const now = new Date();
+        const productsWithNewFlag = res.data.map((p: any) => {
+          const createdAt = new Date(p.createdAt);
+          const isNew = (now.getTime() - createdAt.getTime()) < 24 * 60 * 60 * 1000;
+          return { ...p, isNew };
+        });
+
+        productsWithNewFlag.sort((a: any, b: any) => {
+          if (a.isNew && !b.isNew) return -1;
+          if (!a.isNew && b.isNew) return 1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
+
+        setProducts(productsWithNewFlag || []);
+      })
+      .catch((err) => console.log("Error fetching products:", err));
+
+
+    socket.on("newProduct", (product: Product) => {
+      Alert.alert("Produkt i ri!", `${product.name} - $${product.price}`);
+      setProducts(prev => [{ ...product, isNew: true }, ...prev]);
+
+      Toast.show({
+        type: "success",
+        text1: "Produkt i ri!",
+        text2: `${product.name} - $${product.price}`,
+        visibilityTime: 4000,
+      });
     });
-
-
-    productsWithNewFlag.sort((a: any, b: any) => {
-      if (a.isNew && !b.isNew) return -1;
-      if (!a.isNew && b.isNew) return 1;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    });
-
-    setProducts(productsWithNewFlag || []);
-  })
-  .catch((err) => console.log("Error fetching products:", err));
-
-
-// Kur vjen produkt i ri nga socket
-socket.on("newProduct", (product: Product) => {
-  Alert.alert("Produkt i ri!", `${product.name} - $${product.price}`);
-  setProducts(prev => [{ ...product, isNew: true }, ...prev]);
-
-
-
-  // Shfaq njoftimin
-  Toast.show({
-    type: "success",
-    text1: "Produkt i ri!",
-    text2: `${product.name} - $${product.price}`,
-    visibilityTime: 4000, // 4 sekonda
-  });
-});
-
 
     return () => {
       socket.disconnect();
@@ -202,16 +218,17 @@ socket.on("newProduct", (product: Product) => {
 
         <Text style={styles.title}>All Products</Text>
 
-        <View style={styles.grid}>
-          {list.map((p) => (
-            <ProductCard
-              key={p.id}
-              product={p}
-              addToCart={addToCart}
-              addToFavorites={addToFavorites}
-            />
-          ))}
-        </View>
+   <View style={styles.grid}>
+  {list.map((p) => (
+    <ProductCard
+      key={p.id}
+      product={p}
+      addToCart={() => handleAddToCart(p)}
+      addToFavorites={() => handleAddToFavorites(p)}
+    />
+  ))}
+</View>
+
       </ScrollView>
       <Toast position="top" />
     </UserLayout>

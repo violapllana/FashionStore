@@ -11,7 +11,7 @@ import { useEffect, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { useRouter } from "expo-router";
-import UserLayout from "./components/UserLayout"; // <-- import UserLayout
+import UserLayout from "./components/UserLayout"; 
 
 const API_URL = "http://localhost:5000/api/auth/profile";
 

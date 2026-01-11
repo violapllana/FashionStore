@@ -14,6 +14,7 @@ import axios from "axios";
 
 import UserLayout from "./user/components/UserLayout";
 import ProductCard from "./productCard";
+import Toast from "react-native-toast-message";
 
 interface Product {
   id: number;
@@ -40,50 +41,45 @@ export default function Home() {
 
   const API_URL = "http://localhost:5000/api";
 
-useEffect(() => {
-  AsyncStorage.getItem("role").then(setRole);
+  // Fetch products and role
+  useEffect(() => {
+    AsyncStorage.getItem("role").then(setRole);
 
-  axios
-    .get(`${API_URL}/products`)
-    .then((res) => {
-      const now = new Date();
-      const productsWithNewFlag = res.data.map((p: any) => {
-        const createdAt = new Date(p.createdAt);
-        const isNew = now.getTime() - createdAt.getTime() < 24 * 60 * 60 * 1000;
-        return { ...p, isNew };
-      });
+    axios
+      .get(`${API_URL}/products`)
+      .then((res) => {
+        const now = new Date();
+        const productsWithNewFlag = res.data.map((p: any) => {
+          const createdAt = new Date(p.createdAt);
+          const isNew = now.getTime() - createdAt.getTime() < 24 * 60 * 60 * 1000;
+          return { ...p, isNew };
+        });
 
-      // Sorto: produktet NEW më parë, pastaj të vjetra sipas createdAt
-      productsWithNewFlag.sort((a: any, b: any) => {
-        if (a.isNew && !b.isNew) return -1;
-        if (!a.isNew && b.isNew) return 1;
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
+        // Sort NEW products first, then by createdAt
+        productsWithNewFlag.sort((a: any, b: any) => {
+          if (a.isNew && !b.isNew) return -1;
+          if (!a.isNew && b.isNew) return 1;
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        });
 
-      setProducts(productsWithNewFlag || []);
-      setFilteredProducts(productsWithNewFlag || []);
-    })
-    .catch((err) => console.log(err));
+        setProducts(productsWithNewFlag || []);
+        setFilteredProducts(productsWithNewFlag || []);
+      })
+      .catch((err) => console.log(err));
 
-  if (role) fetchUserData();
-}, [role]);
+    if (role) fetchUserData();
+  }, [role]);
 
-
+  // Fetch user data
   const fetchUserData = async () => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
 
     try {
       const [cartRes, favRes, ordersRes] = await Promise.all([
-        axios.get(`${API_URL}/cart`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${API_URL}/favorites`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
-        axios.get(`${API_URL}/orders`, {
-          headers: { Authorization: `Bearer ${token}` },
-        }),
+        axios.get(`${API_URL}/cart`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/favorites`, { headers: { Authorization: `Bearer ${token}` } }),
+        axios.get(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       setCart(cartRes.data || []);
@@ -94,26 +90,7 @@ useEffect(() => {
     }
   };
 
-  const handleLogout = async () => {
-    await AsyncStorage.clear();
-    setRole(null);
-    setCart([]);
-    setFavorites([]);
-    setOrders([]);
-    router.push("/");
-  };
-
-  // Filter products based on search
-  useEffect(() => {
-    if (!searchQuery) setFilteredProducts(products);
-    else
-      setFilteredProducts(
-        products.filter((p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-  }, [searchQuery, products]);
-
+  // Add to Cart with Toast
   const addToCart = async (product: Product) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
@@ -124,11 +101,19 @@ useEffect(() => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchUserData();
+
+      Toast.show({
+        type: "success",
+        text1: "Added to Cart",
+        text2: `${product.name} has been added to your cart.`,
+        visibilityTime: 3000,
+      });
     } catch (err) {
       console.log(err);
     }
   };
 
+  // Add to Favorites with Toast
   const addToFavorites = async (product: Product) => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
@@ -139,6 +124,13 @@ useEffect(() => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       fetchUserData();
+
+      Toast.show({
+        type: "success",
+        text1: "Added to Favorites",
+        text2: `${product.name} has been added to your favorites.`,
+        visibilityTime: 3000,
+      });
     } catch (err) {
       console.log(err);
     }
@@ -150,9 +142,7 @@ useEffect(() => {
     try {
       const newQty = (item.quantity || 1) + delta;
       if (newQty <= 0) {
-        await axios.delete(`${API_URL}/cart/${item.id}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await axios.delete(`${API_URL}/cart/${item.id}`, { headers: { Authorization: `Bearer ${token}` } });
       } else {
         await axios.put(
           `${API_URL}/cart/${item.id}`,
@@ -170,22 +160,38 @@ useEffect(() => {
     const token = await AsyncStorage.getItem("token");
     if (!token) return;
     try {
-      await axios.post(
-        `${API_URL}/orders`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.post(`${API_URL}/orders`, {}, { headers: { Authorization: `Bearer ${token}` } });
       fetchUserData();
     } catch (err) {
       console.log(err);
     }
   };
 
+  const handleLogout = async () => {
+    await AsyncStorage.clear();
+    setRole(null);
+    setCart([]);
+    setFavorites([]);
+    setOrders([]);
+    router.push("/");
+  };
+
+  // Filter products based on search query
+  useEffect(() => {
+    if (!searchQuery) setFilteredProducts(products);
+    else
+      setFilteredProducts(
+        products.filter((p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      );
+  }, [searchQuery, products]);
+
   const heroHeight = width > 800 ? 500 : 420;
 
-  function removeFromFavorites(id: any) {
+  const removeFromFavorites = (id: any) => {
     throw new Error("Function not implemented.");
-  }
+  };
 
   return (
     <UserLayout
@@ -196,10 +202,8 @@ useEffect(() => {
       searchQuery={searchQuery}
       setSearchQuery={setSearchQuery}
       onLogout={handleLogout}
-      onRemoveFavorite={(id: any) => removeFromFavorites(id)}
-      onChangeQty={(item: Product, delta: number) =>
-        changeCartQuantity(item, delta)
-      }
+      onRemoveFavorite={removeFromFavorites}
+      onChangeQty={changeCartQuantity}
       onOrder={placeOrder}
     >
       <ScrollView>
@@ -212,14 +216,10 @@ useEffect(() => {
           }}
         >
           <View style={styles.heroOverlay}>
-            <Text
-              style={[styles.heroTitle, { fontSize: width > 800 ? 48 : 36 }]}
-            >
+            <Text style={[styles.heroTitle, { fontSize: width > 800 ? 48 : 36 }]}>
               Welcome to FashionStore
             </Text>
-            <Text
-              style={[styles.heroSubtitle, { fontSize: width > 800 ? 24 : 18 }]}
-            >
+            <Text style={[styles.heroSubtitle, { fontSize: width > 800 ? 24 : 18 }]}>
               Discover the newest fashion trends!
             </Text>
           </View>
@@ -236,19 +236,19 @@ useEffect(() => {
               <ProductCard
                 key={p.id}
                 product={p}
-                addToCart={addToCart}
-                addToFavorites={addToFavorites}
+                addToCart={() => addToCart(p)}
+                addToFavorites={() => addToFavorites(p)}
               />
             ))}
           </ScrollView>
         </View>
-        <Pressable
-          style={styles.viewAllBtn}
-          onPress={() => router.push("/user/productsList")}
-        >
+
+        <Pressable style={styles.viewAllBtn} onPress={() => router.push("/user/productsList")}>
           <Text style={styles.viewAllBtnText}>View All Products</Text>
         </Pressable>
       </ScrollView>
+
+      <Toast position="top" />
     </UserLayout>
   );
 }

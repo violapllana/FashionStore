@@ -7,14 +7,7 @@ import UserSidebar from "./UserSidebar";
 import { router } from "expo-router";
 import WeatherWidget from "./weather";
 
-export default function UserLayout({
-  children,
-  role,
-  setRole,
-  searchQuery,
-  setSearchQuery,
-  onLogout,
-}: any) {
+export default function UserLayout({ children, role, setRole, searchQuery, setSearchQuery, onLogout }: any) {
   const [cart, setCart] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -24,25 +17,19 @@ export default function UserLayout({
 
   useEffect(() => {
     if (!role) return;
-    AsyncStorage.getItem("token").then(async (t) => {
-      if (!t) return;
+    AsyncStorage.getItem("token").then(async (token) => {
+      if (!token) return;
       try {
         const [cartRes, favRes, ordersRes] = await Promise.all([
-          axios.get(`${API_URL}/cart`, {
-            headers: { Authorization: `Bearer ${t}` },
-          }),
-          axios.get(`${API_URL}/favorites`, {
-            headers: { Authorization: `Bearer ${t}` },
-          }),
-          axios.get(`${API_URL}/orders`, {
-            headers: { Authorization: `Bearer ${t}` },
-          }),
+          axios.get(`${API_URL}/cart`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/favorites`, { headers: { Authorization: `Bearer ${token}` } }),
+          axios.get(`${API_URL}/orders`, { headers: { Authorization: `Bearer ${token}` } }),
         ]);
         setCart(cartRes.data || []);
         setFavorites(favRes.data || []);
         setOrders(ordersRes.data || []);
       } catch (err) {
-        console.log(err);
+        console.error(err);
       }
     });
   }, [role]);
@@ -50,22 +37,23 @@ export default function UserLayout({
   return (
     <View style={styles.container}>
       {/* TopBar */}
-      <TopBar
-        role={role}
-        favoritesCount={favorites.length}
-        cartCount={cart.length}
-        ordersCount={orders.length}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        onMenuPress={() => setSidebarOpen(true)}
-        onLogout={onLogout}
-      />
+    <TopBar
+  role={role}
+  favoritesCount={favorites.length}
+  cartCount={cart.length}
+  ordersCount={orders.length}
+  setRole={setRole}
+  setCart={setCart}
+  setFavorites={setFavorites}
+  setOrders={setOrders}
+  onMenuPress={() => setSidebarOpen(true)}
+  onLogout={onLogout}
+/>
 
-      {/* Main content + footer */}
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {children}
 
-        {/* Footer brenda scrollit */}
         <View style={footerStyles.footer}>
           <ScrollView
             horizontal
@@ -83,9 +71,7 @@ export default function UserLayout({
               <Text style={footerStyles.heading}>Contact</Text>
               <Text style={footerStyles.text}>contact@fashionstore.com</Text>
               <Text style={footerStyles.text}>+383 38 616 161</Text>
-              <Text style={footerStyles.text}>
-                +383 46 470 047 (Viber / WhatsApp)
-              </Text>
+              <Text style={footerStyles.text}>+383 46 470 047 (Viber / WhatsApp)</Text>
               <Text style={footerStyles.text}>
                 Magjistralja Prishtinë–Ferizaj, Lapnasellë, Prishtinë, Kosovo
               </Text>
@@ -127,47 +113,84 @@ export default function UserLayout({
         cart={cart}
         orders={orders}
         onClose={() => setSidebarOpen(false)}
-        onRemoveFavorite={(id: number) =>
-          setFavorites((f) => f.filter((i) => i.id !== id))
-        }
-        onChangeQty={(item: any, delta: number) => {
-          const newCart = cart.map((c) =>
-            c.id === item.id ? { ...c, quantity: (c.quantity || 1) + delta } : c
-          );
-          setCart(newCart);
+       onRemoveFavorite={async (productId: number) => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    if (!token) return;
+    await axios.delete(`${API_URL}/favorites/${productId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    // filtro favorites lokal me ProductId
+    setFavorites((f) => f.filter((i) => (i.Product?.id || i.ProductId) !== productId));
+  } catch (err) {
+    console.error(err);
+  }
+}}
+
+        onRemoveFromCart={async (id: number) => {
+          try {
+            const token = await AsyncStorage.getItem("token");
+            if (!token) return;
+            await axios.delete(`${API_URL}/cart/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+            setCart((c) => c.filter((i) => i.id !== id));
+          } catch (err) {
+            console.error(err);
+          }
         }}
-        onOrder={() => setOrders([...orders, ...cart])}
+        onChangeQty={async (item: any, delta: number) => {
+          try {
+            const token = await AsyncStorage.getItem("token");
+            if (!token) return;
+            const newQty = (item.quantity || 1) + delta;
+
+            if (newQty < 1) {
+              await axios.delete(`${API_URL}/cart/${item.id}`, { headers: { Authorization: `Bearer ${token}` } });
+              setCart((c) => c.filter((i) => i.id !== item.id));
+            } else {
+              await axios.put(`${API_URL}/cart/${item.id}`, { quantity: newQty }, { headers: { Authorization: `Bearer ${token}` } });
+              setCart((c) => c.map((i) => (i.id === item.id ? { ...i, quantity: newQty } : i)));
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        }}
+        onOrder={async (item?: any) => {
+          try {
+            const token = await AsyncStorage.getItem("token");
+            if (!token) return;
+
+            if (item) {
+              // Place order for single item
+              await axios.post(`${API_URL}/orders`, { items: [{ productId: item.Product?.id || item.id, quantity: item.quantity }] }, { headers: { Authorization: `Bearer ${token}` } });
+              setOrders((o) => [...o, item]);
+              setCart((c) => c.filter((i) => i.id !== item.id));
+            } else {
+              // Place order for all cart
+              await Promise.all(cart.map((cItem) =>
+                axios.post(`${API_URL}/orders`, { items: [{ productId: cItem.Product?.id || cItem.id, quantity: cItem.quantity }] }, { headers: { Authorization: `Bearer ${token}` } })
+              ));
+              setOrders((o) => [...o, ...cart]);
+              setCart([]);
+            }
+          } catch (err) {
+            console.error(err);
+          }
+        }}
       />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  scrollContent: {
-    flexGrow: 1,
-    paddingBottom: 16,
-  },
+  container: { flex: 1, backgroundColor: "#fff" },
+  scrollContent: { flexGrow: 1, paddingBottom: 16 },
 });
 
 const footerStyles = StyleSheet.create({
-  footer: {
-    width: "100%",
-    backgroundColor: "#111",
-    padding: 16,
-    marginTop: 24, // hiq position absolute
-  },
+  footer: { width: "100%", backgroundColor: "#111", padding: 16, marginTop: 24 },
   column: { marginRight: 24 },
   heading: { fontWeight: "700", fontSize: 16, marginBottom: 12, color: "#fff" },
   text: { fontSize: 14, marginBottom: 6, color: "#ccc" },
   link: { fontSize: 14, color: "#1e90ff", marginBottom: 6 },
-  copyright: {
-    marginTop: 16,
-    textAlign: "center",
-    fontSize: 12,
-    color: "#888",
-  },
+  copyright: { marginTop: 16, textAlign: "center", fontSize: 12, color: "#888" },
 });

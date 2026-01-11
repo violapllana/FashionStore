@@ -12,16 +12,13 @@ const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const favoriteRoutes = require("./routes/favoriteRoutes");
 const cartRoutes = require("./routes/cartRoutes");
-const chatRoutes = require("./routes/chatRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const adminDashboard = require("./routes/adminDashboard");
 
 const app = express();
 
-/* =======================
-   MIDDLEWARES
-======================= */
+
 app.use(express.json());
 
 app.use(cors({
@@ -31,15 +28,13 @@ app.use(cors({
   credentials: true
 }));
 
-// Optional – për imazhe/uploads
+
 app.use((req, res, next) => {
   res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
   next();
 });
 
-/* =======================
-   STATIC FILES
-======================= */
+
 
 
 app.use(express.json());
@@ -47,23 +42,17 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-/* =======================
-   ROUTES
-======================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/favorites", favoriteRoutes);
 app.use("/api/cart", cartRoutes);
-app.use("/api/chat", chatRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/admin/dashboard", adminDashboard);
 
 require("./swagger")(app);
 
-/* =======================
-   SOCKET.IO
-======================= */
+
 const server = http.createServer(app);
 
 const io = socketIO(server, {

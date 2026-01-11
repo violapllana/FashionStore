@@ -34,7 +34,7 @@ export default function ContactPage() {
     /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async () => {
-    // ✅ VALIDIMI I FUSHAVE
+
     if (!name.trim() || !email.trim() || !message.trim()) {
       setStatus({
         type: "error",
